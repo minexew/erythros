@@ -149,7 +149,21 @@ while (1)
 			case 0x39:
                 if (!Bt(kbd.down_bitmap, SC_SHIFT))
                 {
-                    FifoU8Ins(my_con->stdin, NORMAL_KEY_SCAN_DECODE_TABLE(U8*)[key]);
+                    if (Bt(kbd.down_bitmap, SC_CTRL))
+                    {
+                        switch (key)
+                        {
+                            case Char2ScanCode('c'):
+                                FifoU8Ins(my_con->stdin, 0x03);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        FifoU8Ins(my_con->stdin, NORMAL_KEY_SCAN_DECODE_TABLE(U8*)[key]);
+                    }
                 }
                 else
                 {

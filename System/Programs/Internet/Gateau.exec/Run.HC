@@ -89,29 +89,26 @@ IRCSetActiveChannel(irc, " ");
 CTask *con_task=Spawn(&DrawConsoles, irc->consoles, , 4);
 
 U8 *host=CAlloc(64);
+I64 irc_port = NULL;
 U8 send_buf = CAlloc(2048);
-StrPrint(host, "some.irc.server.here"); // Testing
-
-I64 err, sock = socket(AF_INET, SOCK_STREAM);
-sockaddr_in addr;
-addr.sin_family = AF_INET;
-addr.sin_port = htons(6667);
 
 EWMSetWidgetFocus(my_win, inp_text);
-EWMShow(my_win);
 
 CTask *irc_task = NULL;
 
 irc->nick = CAlloc(1024);
+irc->pass = CAlloc(1024);
 irc->nick_alt = CAlloc(1024);
 irc->username = CAlloc(1024);
 irc->realname = CAlloc(1024);
+irc->on_connect = CAlloc(1024);
 
-// Testing
-StrPrint(irc->nick, "nick");
-StrPrint(irc->nick_alt, "nick_");
-StrPrint(irc->username, "username");
-StrPrint(irc->realname, "realname");
+#include "UserSettings";
+
+I64 err, sock = socket(AF_INET, SOCK_STREAM);
+sockaddr_in addr;
+addr.sin_family = AF_INET;
+addr.sin_port = htons(irc_port);
 
 err = GetAddressForHost(host, &addr.sin_addr);
 if (!err)
@@ -122,6 +119,7 @@ if (!err)
         irc->sock = sock;
         ConPrint(irc->debug_con, "** Connected to %s\n", host);
         IRCSetNick(irc);
+        EWMShow(my_win);
         irc_task=Spawn(&IRCProtocolHandler, irc, , 4);
     }
 }
@@ -238,6 +236,8 @@ while (1)
 	}
 	if (!my_win)
 	{
+        close(irc->sock);
+        Kill(irc_task);
 		EWMDelTask(my_task);
 		Exit;
 	}

@@ -26,9 +26,11 @@ class IRCSession
     I64 sock;
     EConsole *debug_con;
     U8 *nick;
+    U8 *pass;
     U8 *nick_alt;
     U8 *username;
     U8 *realname;
+    U8 *on_connect;
     U32 bg_color;
     U32 fg_color;
     EWindow *win;
@@ -228,6 +230,10 @@ U0 IRCSend(IRCSession *irc, U8 *fmt,...)
 
 U0 IRCSetNick(IRCSession *irc)
 {
+    if (StrLen(irc->pass))
+    {
+        IRCSend(irc, "PASS %s", irc->pass);
+    }
     IRCSend(irc, "NICK %s", irc->nick);
     IRCSend(irc, "USER %s * * :%s", irc->username, irc->realname);
 }
@@ -300,16 +306,18 @@ U0 IRCProtocolHandler(IRCSession *irc)
         {
             if (!StrCmp(resp_argv[0], "PING"))
             {
-                ConPrint(irc->debug_con, "=> PONG\n");
-                IRCSend(irc, "PONG");
+                ConPrint(irc->debug_con, "=> PONG %s\n", resp_argv[1]);
+                IRCSend(irc, "PONG %s", resp_argv[1]);
             }
 
             // Check for channel-specific messages, add new channels if needed
             if (!StrCmp(resp_argv[1], "PRIVMSG") ||
                 !StrCmp(resp_argv[1], "JOIN") ||
+                !StrCmp(resp_argv[1], "WHISPER") || // Twitch
                 !StrCmp(resp_argv[1], "PART"))
             {
-                if (!StrCmp(resp_argv[1], "PRIVMSG") &&
+                if ((!StrCmp(resp_argv[1], "PRIVMSG") ||
+                    !StrCmp(resp_argv[1], "WHISPER")) &&
                     !StrCmp(resp_argv[2], irc->nick))
                 {
                     msg_name = StrNew(resp_argv[0]+1);
@@ -339,7 +347,7 @@ skip_add_chan:
             }
 
             // Print messages to channel
-            if (!StrCmp(resp_argv[1], "PRIVMSG"))
+            if (!StrCmp(resp_argv[1], "PRIVMSG") || !StrCmp(resp_argv[1], "WHISPER"))
             {
                 if (!StrCmp(resp_argv[2], irc->nick))
                 {
@@ -493,7 +501,10 @@ skip_add_chan:
             if (!StrCmp(resp_argv[1], "001"))
             { // Connect, hello :)
                 StrPrint(irc->win->title, resp_argv[0]+1);
-                IRCJoin(irc, "#erythros"); //testing
+                if (irc->on_connect)
+                {
+                    sendString(irc->sock, irc->on_connect, 0);
+                }
             }
 
             if (!StrCmp(resp_argv[1], "353"))

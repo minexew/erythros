@@ -10,12 +10,15 @@
 #include "System/Fonts/Terminus";
 
 #include "System/Libraries/Misc";
+#include "System/Libraries/FileIO";
 #include "System/Libraries/Display";
 #include "System/Libraries/Mouse";
 #include "System/Libraries/Graphics2D";
 //#include "System/Libraries/JPEG";
 #include "System/Libraries/uPNG";
+#include "System/Libraries/MD5";
 #include "System/Libraries/GUI";
+#include "System/Libraries/User";
 
 #include "/System/Programs/Tools/Terminal.exec/FixedWidthFont.HC";
 #include "/System/Programs/Tools/Terminal.exec/Console.HC";
@@ -68,10 +71,10 @@ EWMSetWallpaper(test_wp);
 DelContext2D(test_wp);
 
 // Test session info
-wmgr->session->user = "user";
+wmgr->session->id = 0;
+wmgr->session->user = eos_users[wmgr->session->id].name;
+wmgr->session->fullname = eos_users[wmgr->session->id].fullname;
 wmgr->session->hostname = "erythros-vm";
-wmgr->session->id = 1;
-wmgr->session->full_name = "Erythros User";
 
 Copy("T:/System/Drivers/pci.ids", "B:/PciDevices.DD.Z");
 ToDolDoc("B:/PciDevices.DD.Z");

@@ -401,6 +401,11 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
 
             ConPrint(con, "Name (%s:%s): ", argv[1], wmgr->session->user);
             im_pmt = ConReadLine(con, ftp_rl, 4096);
+            if (con->etx)
+            {
+                goto ftp_etx_close;
+            }
+
             if (!StrLen(im_pmt))
             {
                 StrPrint(im_pmt, wmgr->session->user);
@@ -417,6 +422,10 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                     ConPrint(con, "Password:");
                     con->disable_echo = TRUE;
                     im_pmt = ConReadLine(con, ftp_rl, 4096);
+                    if (con->etx)
+                    {
+                        goto ftp_etx_close;
+                    }
                     con->disable_echo = FALSE;
                     ConPrint(con, "\n");                    
                     StrPrint(ftp_cmd, "PASS %s\r\n", im_pmt);
@@ -455,7 +464,10 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
             {
                 ConPrint(con, "ftp> ");
                 im_pmt = ConReadLine(con, ftp_rl, 4096);
-
+                if (con->etx)
+                {
+                    goto ftp_etx_close;
+                }
                 im_argv = ParseArgs(im_pmt, &im_argc);
 
                 if (im_argc)
@@ -670,6 +682,7 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                                             goto ftp_im_loop;
                                         }
                                         total += step;
+                                        Sleep(1);
                                     }
                                     Free(data);
                                     close(d_sock);
@@ -731,6 +744,7 @@ ftp_im_loop:
             sendString(c_sock, "QUIT\r\n", 0);
             resp = _FTP_GetResponse(c_sock, con);
             if (resp) { Free(resp); };
+ftp_etx_close:            
             Free(ftp_rl->ac);
             Free(ftp_rl->history);
             Free(ftp_rl);            
@@ -832,9 +846,21 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
     I64 i, j;
     I64 tw = 0, ew = 0;
     I64 sw = 0;
+    I64 uw = 0;
+    I64 cnt = 0;
+    I64 maxcnt = 0;
     U8 *tmpsz = CAlloc(64);
+    U8 perms[11];
+    StrPrint(&perms, "----------");
     CDirEntry *tmpde;
     tmpde=de;
+    for (i=0;i<128;i++)
+    {// TODO: fix this
+        if (eos_users[i].name)
+        {
+            uw = Max(uw, StrLen(eos_users[i].name));
+        }
+    }
     while (tmpde)
     {
         if (!(tmpde->name[0]=='.' && !(flags & 1 << CCMD_LS_OP_a)))
@@ -849,15 +875,18 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
     tmpde=de;
     while (tmpde)
     {
+        EOSGetFileInfo(tmpde);
+        cnt = 1;
         con->fg_color=0xFFFFFF00;
-        if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
-        {
-            con->fg_color=0x729FCF00;
-        }
         if (!(tmpde->name[0]=='.' && !(flags & 1 << CCMD_LS_OP_a)))
         {
             if (!(flags & 1 << CCMD_LS_OP_l))
             {
+
+                if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
+                {
+                    con->fg_color=0x729FCF00;
+                }
 
                 if (tw > con->ch_width)
                 {
@@ -878,6 +907,39 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
             }
             else
             {
+                perms[0] = cond(tmpde->attr & RS_ATTR_DIR,           'd', '-');
+
+                perms[1] = cond(!(tmpde->user_data.u16[0] & 0x1),    'r', '-');     // owner
+                perms[4] = cond(!(tmpde->user_data.u16[0] & 0x8),    'r', '-');     // group
+                perms[7] = cond(!(tmpde->user_data.u16[0] & 0x40),   'r', '-');     // world
+
+                perms[2] = cond(!(tmpde->user_data.u16[0] & 0x2),    'w', '-');     // owner
+                perms[5] = cond(tmpde->user_data.u16[0] & 0x10,      'w', '-');     // group   
+                perms[8] = cond(tmpde->user_data.u16[0] & 0x80,      'w', '-');     // world
+
+                perms[3] = cond(tmpde->user_data.u16[0] & 0x4,       'x', '-');     // owner
+                perms[6] = cond(tmpde->user_data.u16[0] & 0x20,      'x', '-');     // group
+                if (tmpde->user_data.u16[0] & 0x100)
+                {
+                    perms[9] = 'x';    
+                }
+
+                ConPrint(con, "%s - ", &perms, cnt);
+                ConPrint(con, "%s ", eos_users[tmpde->user_data.u16[1]].name);
+                j = StrLen(eos_users[tmpde->user_data.u16[1]].name);
+                while (j < uw)
+                {
+                    ConPrint(con, " ");
+                    j++;
+                }
+                ConPrint(con, "%s ", eos_users[tmpde->user_data.u16[2]].name);
+                j = StrLen(eos_users[tmpde->user_data.u16[2]].name);
+                while (j < uw)
+                {
+                    ConPrint(con, " ");
+                    j++;
+                }
+
                 StrPrint(tmpsz, "%d", tmpde->size);
                 j = StrLen(tmpsz);
                 while (j < sw)
@@ -887,6 +949,12 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 }
                 StrPrint(tmpsz, "%d ", tmpde->size);
                 ConPrint(con, tmpsz);
+
+                if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
+                {
+                    con->fg_color=0x729FCF00;
+                }
+
                 ConPrint(con, "%s\n", tmpde->name);
             }
         }
@@ -1452,6 +1520,38 @@ I64 CCMD_lspci(EConsole *con, I64 argc, U8 **argv)
     return 0;
 }
 
+I64 CCMD_md5sum(EConsole *con, I64 argc, U8 **argv)
+{
+    I64 i;
+    I64 retval = 0;
+    U8 *buf = NULL;
+    U32 size = 0;
+    U32 md5_h[4];
+    if (argc < 2)
+    {
+        return 1;
+    }
+    for (i=1; i<argc; i++)
+    {
+        if (!FileFind(argv[i]))
+        {
+            ConPrint(con, "md5sum: %s: No such file or directory\n");
+            retval = 1;
+        }
+        else
+        {
+            buf = FileRead(argv[i], &size);
+            md5(buf, size, &md5_h[0]);
+            Free(buf);
+            ConPrint(con, "%02x%02x%02x%02x", md5_h[0].u8[0], md5_h[0].u8[1], md5_h[0].u8[2], md5_h[0].u8[3]);
+            ConPrint(con, "%02x%02x%02x%02x", md5_h[1].u8[0], md5_h[1].u8[1], md5_h[1].u8[2], md5_h[1].u8[3]);
+            ConPrint(con, "%02x%02x%02x%02x", md5_h[2].u8[0], md5_h[2].u8[1], md5_h[2].u8[2], md5_h[2].u8[3]);
+            ConPrint(con, "%02x%02x%02x%02x  %s\n", md5_h[3].u8[0], md5_h[3].u8[1], md5_h[3].u8[2], md5_h[3].u8[3], argv[1]);
+        }
+    }
+    return retval;
+}
+
 I64 CCMD_more(EConsole *con, I64 argc, U8 **argv)
 {
     //TODO: everything
@@ -1536,10 +1636,14 @@ I64 CCMD_ping(EConsole *con, I64 argc, U8 **argv)
     I64 cnt = 0;
     I64 echo_size = 48;
     I64 timeout = 0;
+    I64 wait_ctr = 0;
+    I64 wait_len = 0;
     U16 iden = (RandU16 * SysTimerRead) & 0xFFFF;
     U16 seq = 0;
+    Bool etx = FALSE;
     I64 time_req, time_resp;
     U8 *data = MAlloc(echo_size);
+    U8 ch;
     MemSet(data, 0, echo_size);
     if (argc < 2)
     {
@@ -1550,14 +1654,24 @@ I64 CCMD_ping(EConsole *con, I64 argc, U8 **argv)
     {
         ConPrint(con, "PING %s (%d.%d.%d.%d): %d data bytes\n",
             argv[1], res_ip.u8[0], res_ip.u8[1], res_ip.u8[2], res_ip.u8[3], echo_size + 8);
-        while (cnt<4) // testing
+        while (!etx) // testing
         {
             icmp_reply[iden] = NULL;
             IcmpSendRequest(htonl(res_ip), iden, seq, 0, data, echo_size);
             time_req = cnts.jiffies;
             timeout = 0;
-            while (!icmp_reply[iden] && timeout<1000)
+            while (!etx && !icmp_reply[iden] && timeout<1000)
             {
+                if (FifoU8Cnt(con->stdin))
+                {
+                    FifoU8Rem(con->stdin, &ch);
+                    if (ch == 0x03)
+                    {
+                        ConPrint(con, "^C\n");
+                        etx = TRUE;
+                        return 0;
+                    }
+                }                
                 Sleep(1);
                 timeout++;
             }
@@ -1573,23 +1687,41 @@ I64 CCMD_ping(EConsole *con, I64 argc, U8 **argv)
             }
             else
             {
-                ConPrint(con, "no answer yet for icmp_seq=%d\n", seq);
+                ConPrint(con, "Request timeout for icmp_seq %d\n", seq);
                 timeout = 500;
             }
             seq++;
             cnt++;
-            if (cnt<4) // testing
+            wait_ctr = 0;
+            wait_len = 1000 - timeout;
+            while (!etx && wait_ctr<wait_len)
             {
-                Sleep(1000 - timeout);
+                if (FifoU8Cnt(con->stdin))
+                {
+                    FifoU8Rem(con->stdin, &ch);
+                    if (ch == 0x03)
+                    {
+                        ConPrint(con, "^C\n");
+                        etx = TRUE;
+                        return 0;
+                    }
+                }                
+                Sleep(1);
+                wait_ctr++;
             }
         }
-        ConPrint(con, "\n");
         return 0;
     }
     else
     {
         ConPrint(con, "ping: %s: Name or service not known\n", argv[1]);
     }
+    return 1;
+}
+
+I64 CCMD_poweroff(EConsole *con, I64 argc, U8 **argv)
+{
+    PowerOff;
     return 0;
 }
 
@@ -1606,6 +1738,7 @@ I64 CCMD_pwd(EConsole *con, I64 argc, U8 **argv)
 I64 CCMD_reboot(EConsole *con, I64 argc, U8 **argv)
 {
     Reboot;
+    return 0;
 }
 
 #define CCMD_UNAME_OP_s     0

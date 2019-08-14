@@ -330,6 +330,11 @@ U8 *ConReadLine(EConsole *con, EConReadLine *rl, I64 size)
             FifoU8Rem(con->stdin, &ch);
             switch (ch)
             {
+                case 3:
+                    ConPrint(con, "^C\n");
+                    Free(res);
+                    con->etx = TRUE;
+                    return NULL;
                 case 8:
                     if (pos>-1)
                     {
@@ -340,15 +345,7 @@ U8 *ConReadLine(EConsole *con, EConReadLine *rl, I64 size)
                     rl->multi_ac = FALSE;
                     break;
                 case 9:
-                    /*
-                    ConPrint(con, "\n");
-                    for (i=0;i<rl->ac->length[0];i++)
-                    {
-                        ConPrint(con, "%d: %08X, %s\n", i, rl->ac->entries[0][i], rl->ac->entries[0][i]);    
-                    }
-                    */
                     ac_argv = ParseArgs(res, &ac_argc);
-                    //if (ac_argc <2 && res[pos] == ' ')
                     if (res[pos] == ' ')
                     {
                         rl->multi_ac = FALSE;

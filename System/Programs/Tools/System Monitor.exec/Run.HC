@@ -74,4 +74,3 @@ EWMCenterWidget(btn_dbg, my_win,,FALSE);
 	}
 	Sleep(1);
 }
-

@@ -169,6 +169,7 @@ U0 Shell(EConsole *con)
 		argv = NULL;
 
 		con->fg_color=0xFFFFFF00;
+		con->etx = FALSE;
 		shell_input_buf = ConReadLine(con, shell_rl, 4096);
 		if (!shell_input_buf)
 		{

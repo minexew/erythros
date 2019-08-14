@@ -207,7 +207,7 @@ class ESession
 	U8 *user;
 	U8 *hostname;
 	I64 id;
-	U8 *full_name;
+	U8 *fullname;
 }
 
 class EConsole 
@@ -239,6 +239,7 @@ class EConsole
 	I64 scroll_x;
 	I64 scroll_y;
 	Bool new;
+	Bool etx; 
 	EContext2D *term_ctx;
     CFifoU8 *stdin;
     CFifoU8 *stdout;

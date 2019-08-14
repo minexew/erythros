@@ -92,11 +92,17 @@ U8 *StrReplace(U8 *s, U8 *oldW,
     return result; 
 } 
 
-
 CDoc *trace_log = DocNew;
 DocMax(trace_log);
 
 U0 TraceLog()
 {
 	DocDump(trace_log);
+}
+
+U0 PowerOff()
+{
+    OutU16(0x4004, 0x3400);
+    OutU16(0x0604, 0x2000);
+    OutU16(0xB004, 0x2000);
 }
