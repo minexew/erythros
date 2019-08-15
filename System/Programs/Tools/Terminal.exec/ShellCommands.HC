@@ -845,6 +845,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
 {
     I64 i, j;
     I64 tw = 0, ew = 0;
+    I64 fw = 0;
     I64 sw = 0;
     I64 uw = 0;
     I64 cnt = 0;
@@ -853,9 +854,14 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
     U8 perms[11];
     StrPrint(&perms, "----------");
     CDirEntry *tmpde;
+    CDirEntry *tmpde2;
+    CDateStruct *ds = CAlloc(sizeof(CDateStruct));
+    U8 *ds_m = "JanFebMarAprMayJunJulAugSepOctNovDec";
+    U8 *ds_mm = "   ";
     tmpde=de;
     for (i=0;i<128;i++)
-    {// TODO: fix this
+    {// TODO: Correct this to specify max width of *only* users of owner/group for each item,
+        // instead of just naively iterating over all users.
         if (eos_users[i].name)
         {
             uw = Max(uw, StrLen(eos_users[i].name));
@@ -870,6 +876,22 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
             StrPrint(tmpsz, "%d", tmpde->size);
             sw = Max(sw, StrLen(tmpsz));
         }
+        if (tmpde->attr & RS_ATTR_DIR)
+        {
+            tmpde2 = FilesFind(tmpde->full_name);
+            while (tmpde2)
+            {
+                tmpde2 = tmpde2->next;
+                tmpde->user_data2++;
+            }
+            Free(tmpde2);
+        }
+        else
+        {
+            tmpde->user_data2 = 1;
+        }
+        StrPrint(tmpsz, "%d", tmpde->user_data2);
+        fw = Max(fw, StrLen(tmpsz));
         tmpde = tmpde->next;
     }
     tmpde=de;
@@ -883,7 +905,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
             if (!(flags & 1 << CCMD_LS_OP_l))
             {
 
-                if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
+                if (tmpde->attr & RS_ATTR_DIR)
                 {
                     con->fg_color=0x729FCF00;
                 }
@@ -914,7 +936,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 perms[7] = cond(!(tmpde->user_data.u16[0] & 0x40),   'r', '-');     // world
 
                 perms[2] = cond(!(tmpde->user_data.u16[0] & 0x2),    'w', '-');     // owner
-                perms[5] = cond(tmpde->user_data.u16[0] & 0x10,      'w', '-');     // group   
+                perms[5] = cond(!(tmpde->user_data.u16[0] & 0x10),   'w', '-');     // group   
                 perms[8] = cond(tmpde->user_data.u16[0] & 0x80,      'w', '-');     // world
 
                 perms[3] = cond(tmpde->user_data.u16[0] & 0x4,       'x', '-');     // owner
@@ -923,9 +945,16 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 {
                     perms[9] = 'x';    
                 }
-
-                ConPrint(con, "%s - ", &perms, cnt);
-                ConPrint(con, "%s ", eos_users[tmpde->user_data.u16[1]].name);
+                ConPrint(con, "%s ", &perms, cnt);
+                StrPrint(tmpsz, "%d", tmpde->user_data2);
+                j = StrLen(tmpsz);
+                while (j < fw)
+                {
+                    ConPrint(con, " ");
+                    j++;
+                }
+                ConPrint(con, tmpsz);
+                ConPrint(con, " %s ", eos_users[tmpde->user_data.u16[1]].name);
                 j = StrLen(eos_users[tmpde->user_data.u16[1]].name);
                 while (j < uw)
                 {
@@ -939,7 +968,6 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                     ConPrint(con, " ");
                     j++;
                 }
-
                 StrPrint(tmpsz, "%d", tmpde->size);
                 j = StrLen(tmpsz);
                 while (j < sw)
@@ -949,12 +977,16 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 }
                 StrPrint(tmpsz, "%d ", tmpde->size);
                 ConPrint(con, tmpsz);
-
+                Date2Struct(ds, tmpde->datetime);
+                MemCpy(ds_mm, ds_m + ((ds->mon-1) * 3), 3);
+                StrPrint(tmpsz, "%s %02d %02d:%02d ",
+                    ds_mm, ds->day_of_mon, ds->hour, ds->min);
+                if (tmpsz[4]=='0') { tmpsz[4]=' '; };
+                ConPrint(con, tmpsz);
                 if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
                 {
                     con->fg_color=0x729FCF00;
                 }
-
                 ConPrint(con, "%s\n", tmpde->name);
             }
         }
@@ -964,6 +996,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
     {
         ConPrint(con, "\n");
     }
+    Free(ds);
     Free(tmpsz);
     DirTreeDel(de);
 }

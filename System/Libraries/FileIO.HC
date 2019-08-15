@@ -103,6 +103,7 @@ U0 EOSSetFilePerm(CDirEntry *de, I64 flag)
         case EOS_FP_OWNER_R:
         case EOS_FP_OWNER_W:
         case EOS_FP_GROUP_R:
+        case EOS_FP_GROUP_W:        
         case EOS_FP_WORLD_R:
             de->user_data.u16[0] &= ~flag;
             break;
@@ -119,6 +120,7 @@ U0 EOSClearFilePerm(CDirEntry *de, I64 flag)
         case EOS_FP_OWNER_R:
         case EOS_FP_OWNER_W:
         case EOS_FP_GROUP_R:
+        case EOS_FP_GROUP_W:        
         case EOS_FP_WORLD_R:
             de->user_data.u16[0] |= flag;
             break;
