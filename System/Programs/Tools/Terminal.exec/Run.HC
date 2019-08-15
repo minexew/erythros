@@ -1,11 +1,8 @@
 // Erythros Terminal
 
-#include "/System/Libraries/JUnzip";
-
 U64 ccmd_table = Fs->hash_table;
 EConReadLine *shell_rl = CAlloc(sizeof(EConReadLine));
 
-#include "ShellCommands";
 #include "Shell";
 
 U64 flags;

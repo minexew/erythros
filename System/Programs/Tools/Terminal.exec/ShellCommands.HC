@@ -388,28 +388,32 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
     I64 total = 0;
     U8 **im_argv = NULL;
     U8 *dp_1, *dp_2;
+    I64 c_port = 21;
     I64 d_port;
     I64 c_sock = socket(AF_INET, SOCK_STREAM);
     I64 d_sock = NULL;
     I64 err = 0;
+    I64 tC;
     I64 _i = NULL;
     sockaddr_in c_addr;
     sockaddr_in d_addr;
 
-    if (argc < 2)
+    if (argc < 2 || argc > 3)
     {
-        return 0;
+        ConPrint(con, "usage: ftp host-name [port]\n");
+        return 1;
     }
     if (argc > 2)
     {
-        return 0;
+        c_port = Str2I64(argv[2]);
     }
    
     c_addr.sin_family = AF_INET;
-    c_addr.sin_port = htons(21);
+    c_addr.sin_port = htons(c_port);
     err = GetAddressForHost(argv[1], &c_addr.sin_addr);
     if (!err)
     {
+        tC = cnts.jiffies;
         err = connect(c_sock, &c_addr, sizeof(c_addr));
         if (!err)
         {
@@ -793,9 +797,21 @@ ftp_etx_close:
             Free(ftp_cmd);
             return 0;
         }
+        if (cnts.jiffies >= tC+TCP_CONNECT_TIMEOUT)
+        {
+            ConPrint(con, "ftp: connect: Connection timed out\n");
+        }
+        else
+        {
+            ConPrint(con, "ftp: connect: Connection refused\n");
+        }
         close(c_sock);
         Free(ftp_cmd);
         return 1;
+    }
+    else
+    {
+        ConPrint(con, "ftp: %s: Name or service not known\n", argv[1]);
     }
     Free(ftp_cmd);
     return 1;
@@ -804,9 +820,10 @@ ftp_etx_close:
 I64 CCMD_history(EConsole *con, I64 argc, U8 **argv)
 {
     I64 i;
-    for (i = 0; i < shell_rl->history->pos; i++)
+    EConReadLine *rl=con->rl;
+    for (i = 0; i < rl->history->pos; i++)
     {
-        ConPrint(con, "%5d  %s\n", i, shell_rl->history->entries[i]);
+        ConPrint(con, "%5d  %s\n", i, rl->history->entries[i]);
     }
     return 0;
 }
@@ -2205,7 +2222,7 @@ I64 CCMD_wmctrl(EConsole *con, I64 argc, U8 **argv)
             case 1 << CCMD_WMCTRL_OP_m:
                 ConPrint(con, "Name: Ewm\n");
                 ConPrint(con, "Class: ewm\n");
-                ConPrint(con, "PID: %d\n", ewm_task);
+                ConPrint(con, "PID: %d\n", wmgr->task);
                 ConPrint(con, "Window manager's \"showing the desktop\" mode: N/A\n");
                 break;
             case 1 << CCMD_WMCTRL_OP_l:

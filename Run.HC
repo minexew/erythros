@@ -23,6 +23,7 @@
 
 #include "/System/Programs/Tools/Terminal.exec/FixedWidthFont.HC";
 #include "/System/Programs/Tools/Terminal.exec/Console.HC";
+#include "/System/Libraries/JUnzip";
 
 #include "System/Drivers/Net/NetFifo";
 #include "System/Drivers/Net/NativeSocket";
@@ -50,6 +51,7 @@
 #include "System/Drivers/VBoxGuest";
 
 #include "System/WindowManager";
+#include "/System/Programs/Tools/Terminal.exec/ShellCommands.HC";
 
 #include "System/Libraries/Debugger";
 
@@ -81,5 +83,4 @@ Copy("T:/System/Drivers/pci.ids", "B:/PciDevices.DD.Z");
 ToDolDoc("B:/PciDevices.DD.Z");
 
 // Start the window manager
-//EWMTask;
-CTask *ewm_task = Spawn(&EWMTask,,,5);
+wmgr->task = Spawn(&EWMTask,,,5);

@@ -39,6 +39,7 @@ U0 EDbgChar2D(I64 x, I64 y, I64 ch)
 
 U0 EDbgPutChar(I64 ch)
 {
+	if (!IsSingleUser) { return; };
 	text.raw_flags &=~RWF_SHOW_DOLLAR;
 	if (ch>'~' && ch!=219)
 	{

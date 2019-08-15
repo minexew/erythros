@@ -201,6 +201,7 @@ U0 Shell(EConsole *con)
             if (ccmd)
             {
                 cexe = ccmd->exe_addr;
+				con->rl = shell_rl;
                 res = cexe(con, argc, argv);
                 goto prompt_next;
             }

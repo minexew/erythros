@@ -238,6 +238,7 @@ class EConsole
 	I64 screen_y;
 	I64 scroll_x;
 	I64 scroll_y;
+	U64 rl;
 	Bool new;
 	Bool etx; 
 	EContext2D *term_ctx;
@@ -251,6 +252,7 @@ class EWindowManager
 Bool active;
 ESession *session;
 ETask *tasks;
+CTask *task;
 EWindow *windows;
 EWindow *active_win;
 EContextMenu *context_menus;
