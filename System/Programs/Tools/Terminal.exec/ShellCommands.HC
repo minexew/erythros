@@ -979,10 +979,17 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 ConPrint(con, tmpsz);
                 Date2Struct(ds, tmpde->datetime);
                 MemCpy(ds_mm, ds_m + ((ds->mon-1) * 3), 3);
-                StrPrint(tmpsz, "%s %02d %02d:%02d ",
-                    ds_mm, ds->day_of_mon, ds->hour, ds->min);
+                StrPrint(tmpsz, "%s %02d ", ds_mm, ds->day_of_mon);
                 if (tmpsz[4]=='0') { tmpsz[4]=' '; };
                 ConPrint(con, tmpsz);
+                if (ds->year<wmgr->ds->year)
+                {
+                    ConPrint(con, " %d ", ds->year);
+                }
+                else
+                {
+                    ConPrint(con, "%02d:%02d ", ds->hour, ds->min);
+                }
                 if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
                 {
                     con->fg_color=0x729FCF00;

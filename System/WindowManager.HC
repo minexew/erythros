@@ -697,6 +697,7 @@ ETask *task_menu_task=CAlloc(sizeof(ETask));
 U0 EWMTask()
 { // Main Window Manager task.
 	CDateStruct cur_ds;
+	wmgr->ds = &cur_ds;
 	EContextMenu *task_menu=NULL;
 	EContextMenu *add_menu[8];
 	EContextMenu *z_menu;

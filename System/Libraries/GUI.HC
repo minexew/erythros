@@ -273,6 +273,7 @@ Bool prev_rb;
 Bool dragging_lb;
 Bool dragging_rb;
 Bool desktop_select;
+CDateStruct *ds;
 I64 desktop_sel_x1;
 I64 desktop_sel_x2;
 I64 desktop_sel_y1;
