@@ -535,30 +535,36 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                         MemCpy(&d_addr, &c_addr, sizeof(sockaddr_in));
                         d_port = _FTP_SetPassiveMode(c_sock, con);
                         d_addr.sin_port = htons(d_port);
-                        sendString(c_sock, ftp_cmd, 0);
-                        resp = _FTP_GetResponse(c_sock, con);
-                        if (resp[0] == '1')
+                        d_sock = socket(AF_INET, SOCK_STREAM);
+                        err = connect(d_sock, &d_addr, sizeof(d_addr));
                         {
-                            Free(resp);
-                            d_sock = socket(AF_INET, SOCK_STREAM);
-                            err = connect(d_sock, &d_addr, sizeof(d_addr));
+                            if (err < 0)
                             {
-                                if (err < 0)
-                                {
-                                    close(d_sock);
-                                    im_exit = TRUE;
-                                    goto ftp_im_loop;
-                                }
-                                err = recvLine(d_sock, ftp_res, 1024, 0);
-                                while (err>-1)
-                                {
-                                    ConPrint(con, "%s\n", ftp_res);
-                                    err = recvLine(d_sock, ftp_res, 1024, 0);
-                                }
                                 close(d_sock);
+                                im_exit = TRUE;
+                                goto ftp_im_loop;
                             }
+                            sendString(c_sock, ftp_cmd, 0);
                             resp = _FTP_GetResponse(c_sock, con);
+                            if (resp[0] == '1')
+                            {
+                                Free(resp);
+                            }
+                            else
+                            {
+                                Free(resp);
+                                close(d_sock);
+                                goto ftp_im_loop;
+                            }
+                            err = recvLine(d_sock, ftp_res, 1024, 0);
+                            while (err>-1)
+                            {
+                                ConPrint(con, "%s\n", ftp_res);
+                                err = recvLine(d_sock, ftp_res, 1024, 0);
+                            }
+                            close(d_sock);
                         }
+                        resp = _FTP_GetResponse(c_sock, con);
                         Free(resp);
                         goto ftp_im_loop;
                     }
@@ -586,45 +592,51 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                             MemCpy(&d_addr, &c_addr, sizeof(sockaddr_in));
                             d_port = _FTP_SetPassiveMode(c_sock, con);
                             d_addr.sin_port = htons(d_port);
-                            StrPrint(ftp_cmd, "RETR %s\r\n", im_argv[1]);
-                            sendString(c_sock, ftp_cmd, 0);
-                            resp = _FTP_GetResponse(c_sock, con);
-                            if (resp[0] == '1')
+                            StrPrint(ftp_cmd, "RETR %s\r\n", im_argv[1]);                            
+                            d_sock = socket(AF_INET, SOCK_STREAM);
+                            err = connect(d_sock, &d_addr, sizeof(d_addr));
                             {
-                                Free(resp);
-                                d_sock = socket(AF_INET, SOCK_STREAM);
-                                err = connect(d_sock, &d_addr, sizeof(d_addr));
+                                if (err < 0)
                                 {
-                                    if (err < 0)
+                                    close(d_sock);
+                                    im_exit = TRUE;
+                                    goto ftp_im_loop;
+                                }
+                                sendString(c_sock, ftp_cmd, 0);
+                                resp = _FTP_GetResponse(c_sock, con);
+                                if (resp[0] == '1')
+                                {
+                                    Free(resp);
+                                }
+                                else
+                                {
+                                    Free(resp);
+                                    close(d_sock);
+                                    goto ftp_im_loop;
+                                }
+                                data = CAlloc(size);
+                                got = 0;
+                                step = 0;
+                                total = 0;
+                                while (total < size)
+                                {
+                                    step = size - total;
+                                    if (step > 1024) { step = 1024; };
+                                    got = recv(d_sock, data + total, step, 0);
+                                    if (got <= 0)
                                     {
+                                        Free(data);
                                         close(d_sock);
                                         im_exit = TRUE;
                                         goto ftp_im_loop;
                                     }
-                                    data = CAlloc(size);
-                                    got = 0;
-                                    step = 0;
-                                    total = 0;
-                                    while (total < size)
-                                    {
-                                        step = size - total;
-                                        if (step > 1024) { step = 1024; };
-                                        got = recv(d_sock, data + total, step, 0);
-                                        if (got <= 0)
-                                        {
-                                            Free(data);
-                                            close(d_sock);
-                                            im_exit = TRUE;
-                                            goto ftp_im_loop;
-                                        }
-                                        total += got;
-                                    }
-                                    FileWriteRaw(cond(im_argc>2, im_argv[2], im_argv[1]), data, size);
-                                    Free(data);
-                                    close(d_sock);
+                                    total += got;
                                 }
-                                resp = _FTP_GetResponse(c_sock, con);
+                                FileWriteRaw(cond(im_argc>2, im_argv[2], im_argv[1]), data, size);
+                                Free(data);
+                                close(d_sock);
                             }
+                            resp = _FTP_GetResponse(c_sock, con);
                             Free(resp);                            
                         }
                         else
@@ -673,45 +685,51 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                             d_port = _FTP_SetPassiveMode(c_sock, con);
                             d_addr.sin_port = htons(d_port);
                             StrPrint(ftp_cmd, "STOR %s\r\n", cond(im_argc>2, im_argv[2], im_argv[1]));
-                            sendString(c_sock, ftp_cmd, 0);
-                            resp = _FTP_GetResponse(c_sock, con);
-                            if (resp[0] == '1')
+                            d_sock = socket(AF_INET, SOCK_STREAM);
+                            err = connect(d_sock, &d_addr, sizeof(d_addr));
                             {
-                                Free(resp);
-                                d_sock = socket(AF_INET, SOCK_STREAM);
-                                err = connect(d_sock, &d_addr, sizeof(d_addr));
+                                if (err < 0)
                                 {
+                                    close(d_sock);
+                                    im_exit = TRUE;
+                                    goto ftp_im_loop;
+                                }
+                                sendString(c_sock, ftp_cmd, 0);
+                                resp = _FTP_GetResponse(c_sock, con);
+                                if (resp[0] == '1')
+                                {
+                                    Free(resp);
+                                }
+                                else
+                                {
+                                    Free(resp);
+                                    close(d_sock);
+                                    goto ftp_im_loop;
+                                }
+                                err = 0;
+                                got = 0;
+                                step = 0;
+                                total = 0;
+                                data = FileReadRaw(im_argv[1], &size);
+                                while (total < size)
+                                {
+                                    step = size - total;
+                                    if (step > 1024) { step = 1024; };
+                                    err = send(d_sock, data + total, step, 0);
                                     if (err < 0)
                                     {
+                                        Free(data);
                                         close(d_sock);
                                         im_exit = TRUE;
                                         goto ftp_im_loop;
                                     }
-                                    err = 0;
-                                    got = 0;
-                                    step = 0;
-                                    total = 0;
-                                    data = FileReadRaw(im_argv[1], &size);
-                                    while (total < size)
-                                    {
-                                        step = size - total;
-                                        if (step > 1024) { step = 1024; };
-                                        err = send(d_sock, data + total, step, 0);
-                                        if (err < 0)
-                                        {
-                                            Free(data);
-                                            close(d_sock);
-                                            im_exit = TRUE;
-                                            goto ftp_im_loop;
-                                        }
-                                        total += step;
-                                        Sleep(1);
-                                    }
-                                    Free(data);
-                                    close(d_sock);
+                                    total += step;
+                                    Sleep(1);
                                 }
-                                resp = _FTP_GetResponse(c_sock, con);
+                                Free(data);
+                                close(d_sock);
                             }
+                            resp = _FTP_GetResponse(c_sock, con);
                             Free(resp);
                         }
                         else
@@ -896,8 +914,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
         {
             tw += StrLen(tmpde->name) + 2;
             ew = Max(ew, StrLen(tmpde->name) + 2);
-            StrPrint(tmpsz, "%d", tmpde->size);
-            sw = Max(sw, StrLen(tmpsz));
+            sw = Max(sw, ToI64(Log10(tmpde->size))+1);
         }
         if (tmpde->attr & RS_ATTR_DIR)
         {
@@ -913,8 +930,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
         {
             tmpde->user_data2 = 1;
         }
-        StrPrint(tmpsz, "%d", tmpde->user_data2);
-        fw = Max(fw, StrLen(tmpsz));
+        fw = Max(fw, ToI64(Log10(tmpde->user_data2))+1);
         tmpde = tmpde->next;
     }
     tmpde=de;
@@ -970,7 +986,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 }
                 ConPrint(con, "%s ", &perms, cnt);
                 StrPrint(tmpsz, "%d", tmpde->user_data2);
-                j = StrLen(tmpsz);
+                j = ToI64(Log10(tmpde->user_data2))+1;
                 while (j < fw)
                 {
                     ConPrint(con, " ");
@@ -2076,6 +2092,44 @@ unzip_end_close:
     Free(f->buf);
     Free(f);
     return retval;
+}
+
+I64 CCMD_uptime(EConsole *con, I64 argc, U8 **argv)
+{
+    I64 uptime = ToI64(tS);
+    I64 updays, uphours, upmins, users;
+
+    updays = uptime / 86400;
+    uphours = (uptime - (updays * 86400)) / 3600;
+    upmins = (uptime - (updays * 86400) - (uphours * 3600)) / 60;
+    users = 1;
+
+    ConPrint(con, " %02d:%02d:%02d up ", wmgr->ds->hour, wmgr->ds->min, wmgr->ds->sec);
+    switch (updays)
+    {
+        case 0:
+            break;
+        case 1:
+            ConPrint(con, "%d day,", updays);
+            break;
+        default:
+            ConPrint(con, "%d days,", updays);
+            break;
+    }
+    ConPrint(con, "%2d:%02d,", uphours, upmins);
+    switch (users)
+    {
+        case 0:
+            break;
+        case 1:
+            ConPrint(con, " %2d user,", users);
+            break;
+        default:
+            ConPrint(con, " %2d users,", users);
+            break;
+    }
+    ConPrint(con, "  load average: %.2f, %.2f, %.2f\n", wmgr->loadavg_1m, wmgr->loadavg_5m, wmgr->loadavg_15m);
+    return 0;
 }
 
 I64 CCMD_who(EConsole *con, I64 argc, U8 **argv)

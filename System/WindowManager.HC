@@ -694,8 +694,31 @@ U0 EWMDrawDesktopSelect()
 
 ETask *task_menu_task=CAlloc(sizeof(ETask));
 
+F64 EWMTaskCount()
+{
+	F64 cnt = 0.0;
+	I64 i;
+	CCPU *c;
+	CTask *task;
+	CTask *task1;
+	for (i=0;i<mp_cnt;i++)
+	{
+    	c=&cpu_structs[i];
+		task=c->seth_task;
+		task1=task->next_child_task;
+		while (task1!=(&task->next_child_task)(U8 *)
+        	-offset(CTask.next_sibling_task))
+		{		
+			cnt += 1.0;
+			task1=task1->next_sibling_task;
+		}
+	}
+	return cnt;
+}
+
 U0 EWMTask()
 { // Main Window Manager task.
+	Bool loadavg_sample = FALSE;
 	CDateStruct cur_ds;
 	wmgr->ds = &cur_ds;
 	EContextMenu *task_menu=NULL;
@@ -719,6 +742,8 @@ U0 EWMTask()
 	I64 awin_title_xofs;
 	I64 awin_title_len;
 	I64 i,j,k;
+	F64 avg;
+	I64 _avg;
 
 	// Startup tasks:
 	EWMNewTask("T:/System/Programs/Tools/System Monitor.exec");
@@ -729,6 +754,54 @@ U0 EWMTask()
 		EWMSetMousePointer;
 		Date2Struct(&cur_ds, Now);
 		EWMUpdateMenuBarClock(&cur_ds);
+
+		if (!(cur_ds.sec%5))
+		{
+			if (!loadavg_sample)
+			{
+				wmgr->load_1m[wmgr->load_1m_ctr] = EWMTaskCount / ToF64(mp_cnt);
+				wmgr->load_1m_ctr++;
+				if (wmgr->load_1m_ctr>11)
+				{
+					avg = 0.0;
+					for (_avg=0; _avg<12; _avg++)
+					{
+						avg += wmgr->load_1m[_avg];
+					}
+					wmgr->loadavg_1m = avg / 12;
+					wmgr->load_5m[wmgr->load_5m_ctr] = wmgr->loadavg_1m;
+					wmgr->load_5m_ctr++;
+					if (wmgr->load_5m_ctr>4)
+					{
+						avg = 0.0;
+						for (_avg=0; _avg<5; _avg++)
+						{
+							avg += wmgr->load_5m[_avg];
+						}
+						wmgr->loadavg_5m = avg / 5;
+						wmgr->load_15m[wmgr->load_15m_ctr] = wmgr->loadavg_5m;
+						wmgr->load_15m_ctr++;
+						if (wmgr->load_15m_ctr>2)
+						{
+							avg = 0.0;
+							for (_avg=0; _avg<3; _avg++)
+							{
+								avg += wmgr->load_15m[_avg];
+							}
+							wmgr->loadavg_15m = avg / 3;
+							wmgr->load_15m_ctr = 0;
+						}
+						wmgr->load_5m_ctr = 0;
+					}
+					wmgr->load_1m_ctr = 0;
+				}
+			}
+			loadavg_sample = TRUE;
+		}
+		else
+		{
+			loadavg_sample = FALSE;
+		}
 
 		if (!wmgr->active)
 		{
