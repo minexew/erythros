@@ -297,6 +297,29 @@ I64 CCMD_clear(EConsole *con, I64 argc, U8 **argv)
     return 0;
 }
 
+I64 CCMD_cp(EConsole *con, I64 argc, U8 **argv)
+{
+    CDirEntry *tmpde;
+    if (argc < 3)
+    {
+        ConPrint(con, "cp: missing destination file operand after '%s'\n", argv[1]);
+        return 1;
+    }
+    if (argc < 2)
+    {
+        ConPrint(con, "cp: missing file operand\n");
+        return 1;
+    }
+    tmpde = FilesFind(argv[1]);
+    if (!tmpde)
+    {
+        ConPrint(con, "cp: cannot stat '%s': No such file or directory\n", argv[1]);
+        return 1;
+    }
+    Copy(argv[1], argv[2]);
+    DirTreeDel(tmpde);
+}
+
 I64 CCMD_echo(EConsole *con, I64 argc, U8 **argv)
 {
     I64 i;
@@ -596,7 +619,7 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                                         }
                                         total += got;
                                     }
-                                    FileWrite(cond(im_argc>2, im_argv[2], im_argv[1]), data, size);
+                                    FileWriteRaw(cond(im_argc>2, im_argv[2], im_argv[1]), data, size);
                                     Free(data);
                                     close(d_sock);
                                 }
@@ -668,7 +691,7 @@ I64 CCMD_ftp(EConsole *con, I64 argc, U8 **argv)
                                     got = 0;
                                     step = 0;
                                     total = 0;
-                                    data = FileRead(im_argv[1], &size);
+                                    data = FileReadRaw(im_argv[1], &size);
                                     while (total < size)
                                     {
                                         step = size - total;
@@ -1580,7 +1603,7 @@ I64 CCMD_md5sum(EConsole *con, I64 argc, U8 **argv)
         }
         else
         {
-            buf = FileRead(argv[i], &size);
+            buf = FileReadRaw(argv[i], &size);
             md5(buf, size, &md5_h[0]);
             Free(buf);
             ConPrint(con, "%02x%02x%02x%02x", md5_h[0].u8[0], md5_h[0].u8[1], md5_h[0].u8[2], md5_h[0].u8[3]);
@@ -1622,6 +1645,29 @@ I64 CCMD_mkdir(EConsole *con, I64 argc, U8 **argv)
         }
     }
     return res;
+}
+
+I64 CCMD_mv(EConsole *con, I64 argc, U8 **argv)
+{
+    CDirEntry *tmpde;
+    if (argc < 3)
+    {
+        ConPrint(con, "mv: missing destination file operand after '%s'\n", argv[1]);
+        return 1;
+    }
+    if (argc < 2)
+    {
+        ConPrint(con, "mv: missing file operand\n");
+        return 1;
+    }
+    tmpde = FilesFind(argv[1]);
+    if (!tmpde)
+    {
+        ConPrint(con, "mv: cannot stat '%s': No such file or directory\n", argv[1]);
+        return 1;
+    }
+    Move(argv[1], argv[2]);
+    DirTreeDel(tmpde);
 }
 
 I64 CCMD_nslookup(EConsole *con, I64 argc, U8 **argv)
@@ -1779,6 +1825,135 @@ I64 CCMD_reboot(EConsole *con, I64 argc, U8 **argv)
 {
     Reboot;
     return 0;
+}
+
+#define CCMD_RM_OP_r     0
+#define CCMD_RM_OP_f     1
+
+I64 CCMD_rm(EConsole *con, I64 argc, U8 **argv)
+{
+    I64 i;
+    I64 cnt;
+    I64 retval = 0;
+    CDirEntry *tmpde;
+    CDirEntry *tmpde2;
+    if (argc < 2)
+    {
+        ConPrint(con, "rm: missing operand\n");
+        return 1;
+    }
+    U8 *op_lst = "rf";
+    U64 op_err = NULL;
+    I64 flags = NULL;
+    switch (ParseOpt(op_lst, argc, argv, &flags, &op_err, TRUE))
+    {
+        case ERR_INVALID_OPT:
+            ConPrint(con, "rm: invalid option -- '%s'\n", op_err);
+            break;
+        default:
+            break;
+    }
+    if (op_err)
+    {
+        Free(op_err);
+        return 1;
+    }
+    for (i=1; i<argc; i++)
+    {
+        if (argv[i][0] != '-')
+        {
+            tmpde = FilesFind(argv[i]);
+            if (!tmpde)
+            {
+                    ConPrint(con, "rm: cannot remove '%s': No such file or directory\n", argv[i]);
+                    retval = 1;
+            }
+            else
+            {
+                tmpde2 = tmpde;
+                while (tmpde2)
+                {
+                    if (!StrCmp(tmpde2->name, ".") || !StrCmp(tmpde2->name, ".."))
+                    {
+                        goto skip_parent;
+                    }
+                    if (IsDir(tmpde2->full_name))
+                    {
+                        if (!(flags & 1 << CCMD_RM_OP_r))
+                        {
+                            ConPrint(con, "rm: cannot remove '%s': Is a directory\n", tmpde2->name);
+                            retval = 1;
+                        }
+                        else
+                        {
+                            DelTree(tmpde2->full_name);
+                        }
+                    }
+                    else
+                    {
+                        Del(tmpde2->full_name,,FALSE);
+                    }
+skip_parent:                
+                    tmpde2 = tmpde2->next;
+                }
+            }       
+            DirTreeDel(tmpde);
+        }
+        if (IsDir(argv[i]) && flags & 1 << CCMD_RM_OP_r)
+        {
+            DelTree(argv[i]);
+        }
+    }
+    return retval;
+}
+
+I64 CCMD_rmdir(EConsole *con, I64 argc, U8 **argv)
+{
+    I64 i;
+    I64 cnt;
+    I64 retval = 0;
+    CDirEntry *tmpde;
+    if (argc < 2)
+    {
+        ConPrint(con, "rmdir: missing operand\n");
+        return 1;
+    }
+    for (i=1; i<argc; i++)
+    {
+        if (!FileFind(argv[i]))
+        {
+            ConPrint(con, "rmdir: failed to remove '%s': No such file or directory\n", argv[i]);
+            retval = 1;
+        }
+        else
+        {
+            if (!IsDir(argv[i]))
+            {
+                ConPrint(con, "rmdir: failed to remove '%s': Not a directory\n", argv[i]);
+                retval = 1;
+            }
+            else
+            {
+                cnt = 0;
+                tmpde = FilesFind(argv[i]);
+                while (tmpde)
+                {
+                    tmpde = tmpde->next;
+                    cnt++;
+                }
+                DirTreeDel(tmpde);
+                if (cnt > 2)
+                {
+                    ConPrint(con, "rmdir: failed to remove '%s': Directory not empty\n", argv[i]);
+                }
+                else
+                {
+                    DelTree(argv[i]);
+                }
+            }
+        }
+    }
+    return retval;
 }
 
 #define CCMD_UNAME_OP_s     0

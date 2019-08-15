@@ -11,6 +11,7 @@
 
 #include "System/Libraries/Misc";
 #include "System/Libraries/FileIO";
+#include "System/Libraries/FileRaw";
 #include "System/Libraries/Display";
 #include "System/Libraries/Mouse";
 #include "System/Libraries/Graphics2D";
