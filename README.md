@@ -22,4 +22,4 @@ Erythros is an experimental "OS" project that runs on top of an unmodified Templ
 
 # usage
 
-Clone the repo, create a RedSea ISO.C disk image using [RedSeaExplorer](https://checksum.fail/files/RedSeaExplorer-0.6.zip) for Windows or [redseafs](https://github.com/obecebo/redseafs) for Linux, execute `Cd("T:/"); #include "Run";` from Adam task.
+Clone the repo, create a RedSea ISO.C disk image using [RedSeaExplorer](https://checksum.fail/files/RedSeaExplorer-0.6.zip) for Windows or [redseafs](https://github.com/obecebo/redseafs) for Linux, execute `Adam("Cd(\"T:\");\n"); AdamFile("T:/Run.HC");;` from current task or startup script.

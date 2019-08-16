@@ -747,7 +747,7 @@ U0 EWMTask()
 
 	// Startup tasks:
 	EWMNewTask("T:/System/Programs/Tools/System Monitor.exec");
-	Spawn(&Netcfg,,,5);
+	Spawn(&Netcfg,,,mp_cnt-1);
 	
 	while (1) //The ride never ends...
 	{
