@@ -83,4 +83,4 @@ Copy("T:/System/Drivers/pci.ids", "B:/PciDevices.DD.Z");
 ToDolDoc("B:/PciDevices.DD.Z");
 
 // Start the window manager
-wmgr->task = Spawn(&EWMTask,,,5);
+wmgr->task = Spawn(&EWMTask,,,mp_cnt-2);

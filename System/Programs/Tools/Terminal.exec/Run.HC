@@ -78,8 +78,8 @@ I64 cb_x, cb_y, cb_curY;
 I64 cb_ch;
 Bool cb_hi;
 
-CTask *alpha_task=Spawn(&DrawConsoles, consoles_head, , 4);
-CTask *shell_task=Spawn(&Shell, my_con, , 6); // we can change this, it was acting slow on same core.
+CTask *alpha_task=Spawn(&DrawConsoles, consoles_head, , mp_cnt-3);
+CTask *shell_task=Spawn(&Shell, my_con, , mp_cnt-1); // we can change this, it was acting slow on same core.
 
 my_ctx->pointer=ms_cur_input;
 

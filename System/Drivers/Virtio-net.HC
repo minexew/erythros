@@ -1,5 +1,3 @@
-extern I64 NetFifoPushCopy(U8* data, I64 length);
-
 #define ETHERNET_FRAME_SIZE 1518
 
 // Current Rx/Tx buffer
@@ -205,45 +203,3 @@ I64 EthernetInit()
     OutU8(virtio_net.port + VIRTIO_PCI_STATUS, InU8(virtio_net.port + VIRTIO_PCI_STATUS) | VIRTIO_CONFIG_S_DRIVER_OK);
     OutU16(virtio_net.port + VIRTIO_PCI_QUEUE_NOTIFY, 0);  
 }
-
-U0 VirtioNetRxHandler()
-{
-  I64 idx_used, idx_rec;
-  I64 i,j;
-  EVirtioUsedItem *item;
-  U8 *buffer;
-  I64 length;
-  while (1)
-  {
-    idx_rec = virtio_net.rq_index;
-    idx_used = virtio_net.rq->used.index;
-
-    if (idx_used < idx_rec)
-    {
-      idx_used += 0x10000;
-    }
-
-    if (idx_rec != idx_used && idx_used)
-    {
-
-      j=0;
-      for (i=idx_rec; i<idx_used; i++)
-      {
-        item = virtio_net.rq->used.ring;
-        buffer = virtio_net.rq->buffers[item[i%256].index+1];
-        length = item[i%256].length;
-        NetFifoPushCopy(buffer, length-10);
-        j++;
-        virtio_net.rx_packets++;
-        virtio_net.rx_bytes += length-10;
-      }
-      virtio_net.rq_index = idx_used%0x10000;
-      virtio_net.rq->available.index += j;
-      OutU16(virtio_net.port + VIRTIO_PCI_QUEUE_NOTIFY, 0);  
-    }
-    Yield;
-  }
-}
-
-EthernetInit;
-Spawn(&VirtioNetRxHandler,,,6);
