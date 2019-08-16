@@ -360,4 +360,4 @@ U0 KbdMsUpdateTask()
 	}
 }
 
-Spawn(&KbdMsUpdateTask,,,5);
+Spawn(&KbdMsUpdateTask,,,mp_cnt-2);
