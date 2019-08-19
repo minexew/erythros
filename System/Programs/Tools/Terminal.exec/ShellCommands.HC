@@ -2149,6 +2149,8 @@ I64 CCMD_uptime(EConsole *con, I64 argc, U8 **argv)
     return 0;
 }
 
+#include "/System/Programs/Tools/Terminal.exec/ShellCommands/vi.HC";
+
 I64 CCMD_who(EConsole *con, I64 argc, U8 **argv)
 {
     //TODO

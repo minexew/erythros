@@ -167,6 +167,12 @@ U0 ConClear(EConsole *con)
     con->screen_y=0;
 }
 
+U0 ConSetColor(EConsole *con, U32 fg_color, U32 bg_color)
+{
+    con->fg_color = fg_color;
+    con->bg_color = bg_color;
+}
+
 U0 ConPrint(EConsole *con, U8 *fmt,...)
 {
     I64 _i;
@@ -343,6 +349,9 @@ U8 *ConReadLine(EConsole *con, EConReadLine *rl, I64 size)
                         ConPutChar(con, ch);
                     }
                     rl->multi_ac = FALSE;
+                    break;
+                case 21:
+                    // TODO: Delete in-place
                     break;
                 case 9:
                     ac_argv = ParseArgs(res, &ac_argc);
@@ -638,6 +647,12 @@ U8 *ConReadLine(EConsole *con, EConReadLine *rl, I64 size)
                 case 19:
                 case 20:
                     rl->multi_ac = FALSE;
+                    break;
+                case 22: // TODO: HOME                    
+                case 23: // TODO: END
+                case 24: // PGUP
+                case 25: // PGDN
+                case 27: // ESC
                     break;
                 default:
                     pos++;

@@ -127,6 +127,10 @@ while (1)
                 ResetHilight(my_con);
                 FifoU8Ins(my_con->stdin, 20);
                 break;
+            case SC_DELETE:
+                ResetHilight(my_con);
+                FifoU8Ins(my_con->stdin, 21);
+                break;
             case SC_BACKSPACE:
                 ResetHilight(my_con);
                 FifoU8Ins(my_con->stdin, 8);
@@ -138,6 +142,26 @@ while (1)
             case SC_ENTER:
                 ResetHilight(my_con);
                 FifoU8Ins(my_con->stdin, 10);
+                break;
+            case SC_HOME:
+                ResetHilight(my_con);
+                FifoU8Ins(my_con->stdin, 22);
+                break;
+            case SC_END:
+                ResetHilight(my_con);
+                FifoU8Ins(my_con->stdin, 23);
+                break;
+            case SC_PAGE_UP:
+                ResetHilight(my_con);
+                FifoU8Ins(my_con->stdin, 24);
+                break;
+            case SC_PAGE_DOWN:
+                ResetHilight(my_con);
+                FifoU8Ins(my_con->stdin, 25);
+                break;
+            case SC_ESC:
+                ResetHilight(my_con);
+                FifoU8Ins(my_con->stdin, 27);
                 break;
 			case 0x02 ... 0x0D:
 			case 0x10 ... 0x1B:
