@@ -322,7 +322,7 @@ I64 JZProcessFile(EConsole *con, JZFile *zip)
         Free(data);
         return -1;
     }
-    FileWrite(filename, data, header.uncompressedSize);
+    EOSWrite(filename, data, header.uncompressedSize);
     Free(data);
     return 0;
 }

@@ -37,15 +37,18 @@
  */
 
 /* Syntax highlight types */
-#define VI_HL_NORMAL 0
-#define VI_HL_NONPRINT 1
-#define VI_HL_COMMENT 2   /* Single line comment. */
+#define VI_HL_NORMAL    0
+#define VI_HL_NONPRINT  1
+#define VI_HL_COMMENT   2   /* Single line comment. */
 #define VI_HL_MLCOMMENT 3 /* Multi-line comment. */
-#define VI_HL_KEYWORD 4
-#define VI_HL_CLASS 5
-#define VI_HL_STRING 6
-#define VI_HL_NUMBER 7
-#define VI_HL_MATCH 8      /* Search match. */
+#define VI_HL_KEYWORD   4
+#define VI_HL_CLASS     5
+#define VI_HL_VAR       6
+#define VI_HL_FUNCTION  7
+#define VI_HL_STRING    8
+#define VI_HL_NUMBER    9
+#define VI_HL_OPERATOR  10
+#define VI_HL_MATCH     11     /* Search match. */
 
 #define VI_HL_HIGHLIGHT_STRINGS (1<<0)
 #define VI_HL_HIGHLIGHT_NUMBERS (1<<1)
@@ -54,6 +57,8 @@ class vi_editorSyntax {
     U8 **filematch;
     U8 **keywords;
     U8 **classes;    
+    U8 **vars;    
+    U8 **functions;    
     U8 *singleline_comment_start;
     U8 *multiline_comment_start;
     U8 *multiline_comment_end;
@@ -124,12 +129,18 @@ U8 *C_VI_HL_extensions[5] = {".hc",".hc.z", ".HC", ".HC.Z", NULL};
 
 U8 **C_VI_HL_keywords;
 U8 **C_VI_HL_classes;
+U8 **C_VI_HL_vars;
+U8 **C_VI_HL_functions;
 
 I64 VI_HL_populate = 0;
 I64 VI_HL_keywords_cnt = 0;
 I64 VI_HL_keywords_idx = 0;
 I64 VI_HL_classes_cnt = 0;
 I64 VI_HL_classes_idx = 0;
+I64 VI_HL_vars_cnt = 0;
+I64 VI_HL_vars_idx = 0;
+I64 VI_HL_functions_cnt = 0;
+I64 VI_HL_functions_idx = 0;
 I64 vi_i;
 
 CHashTable  *vi_lookup_tbl;
@@ -170,6 +181,30 @@ while (VI_HL_populate<2)
                         VI_HL_classes_cnt++;
                     }
 			    }
+			    if (vi_lookup_sym->type & HTT_GLBL_VAR)
+			    {
+                    if (VI_HL_populate)
+                    {
+                        C_VI_HL_vars[VI_HL_vars_idx] = StrNew(vi_lookup_sym->str);
+                        VI_HL_vars_idx++;
+                    }
+                    else
+                    {
+                        VI_HL_vars_cnt++;
+                    }
+			    }
+			    if (vi_lookup_sym->type & HTT_FUN || vi_lookup_sym->type & HTT_DEFINE_STR)
+			    {
+                    if (VI_HL_populate)
+                    {
+                        C_VI_HL_functions[VI_HL_functions_idx] = StrNew(vi_lookup_sym->str);
+                        VI_HL_functions_idx++;
+                    }
+                    else
+                    {
+                        VI_HL_functions_cnt++;
+                    }
+			    }
 			    vi_lookup_sym = vi_lookup_sym->next;
 		    }
 	    }  
@@ -177,10 +212,19 @@ while (VI_HL_populate<2)
     } 
     if (!VI_HL_populate)
     {
-        C_VI_HL_keywords = CAlloc(sizeof(U8*) * VI_HL_keywords_cnt+1);
+        //C_VI_HL_keywords = CAlloc(sizeof(U8*) * VI_HL_keywords_cnt+1);
+        C_VI_HL_keywords = CAlloc(sizeof(U8*) * VI_HL_keywords_cnt+8);
         C_VI_HL_classes = CAlloc(sizeof(U8*) * VI_HL_classes_cnt+1);
+        C_VI_HL_vars = CAlloc(sizeof(U8*) * VI_HL_vars_cnt+1);
+        C_VI_HL_functions = CAlloc(sizeof(U8*) * VI_HL_functions_cnt+1);                
     }
     VI_HL_populate++;
+
+    vi_i=0;
+    while (C_VI_HL_keywords[vi_i]) vi_i++;
+    C_VI_HL_keywords[vi_i+0] = "#define";    
+    C_VI_HL_keywords[vi_i+1] = "#include";
+    C_VI_HL_keywords[vi_i+2] = NULL;
 }
 
 #define HLDB_ENTRIES 1
@@ -207,6 +251,13 @@ Bool _vi_isspace(I64 ch)
             break;
     }
     return FALSE;
+}
+
+I64 _vi_is_operator(I64 c) {
+    U8 ch[2];
+    ch[0] = c;
+    ch[1] = NULL;
+    return StrFirstOcc("`:>~<*/\%&^|+-=", &ch) != NULL;
 }
 
 I64 _vi_is_separator(I64 c) {
@@ -315,6 +366,8 @@ U0 _vi_editorUpdateSyntax(vi_editorConfig *E, vi_erow *row) {
     U8 *p;
     U8 **keywords = E->syntax->keywords;
     U8 **classes = E->syntax->classes;
+    U8 **vars = E->syntax->vars;
+    U8 **functions = E->syntax->functions;        
     U8 *scs = E->syntax->singleline_comment_start;
     U8 *mcs = E->syntax->multiline_comment_start;
     U8 *mce = E->syntax->multiline_comment_end;
@@ -337,7 +390,7 @@ U0 _vi_editorUpdateSyntax(vi_editorConfig *E, vi_erow *row) {
 
     while(*p) {
         /* Handle // comments. */
-        if (prev_sep && *p == scs[0] && *(p+1) == scs[1]) {
+          if (!in_string && *p == scs[0] && *(p+1) == scs[1]) {
             /* From here to end is a comment */
             MemSet(row->hl+i,VI_HL_COMMENT,row->size-i);
             return;
@@ -405,14 +458,22 @@ U0 _vi_editorUpdateSyntax(vi_editorConfig *E, vi_erow *row) {
             goto vi_eus_cont;
         }
 
-        /* Handle keywords and classes */
+        /* Handle operators */
+        if (_vi_is_operator(*p)) {
+            row->hl[i] = VI_HL_OPERATOR;
+            p++; i++;
+            prev_sep = 1;
+            goto vi_eus_cont;
+        }
+
+        /* Handle keywords, classes, vars and functions */
         if (prev_sep) {
             I64 j;
             for (j = 0; keywords[j]; j++) {
                 I64 klen = StrLen(keywords[j]);
 
                 if (!MemCmp(p,keywords[j],klen) &&
-                    _vi_is_separator(*(p+klen)))
+                    (_vi_is_separator(*(p+klen)) || _vi_is_operator(*(p+klen))))
                 {
                     // Keyword 
                     MemSet(row->hl+i, VI_HL_KEYWORD, klen);
@@ -429,7 +490,7 @@ U0 _vi_editorUpdateSyntax(vi_editorConfig *E, vi_erow *row) {
                 klen = StrLen(classes[j]);
 
                 if (!MemCmp(p,classes[j],klen) &&
-                    _vi_is_separator(*(p+klen)))
+                    (_vi_is_separator(*(p+klen)) || _vi_is_operator(*(p+klen))))
                 {
                     // Class
                     MemSet(row->hl+i, VI_HL_CLASS, klen);
@@ -441,6 +502,40 @@ U0 _vi_editorUpdateSyntax(vi_editorConfig *E, vi_erow *row) {
             if (classes[j] != NULL) {
                 prev_sep = 0;
                 goto vi_eus_cont; // We had a class match
+            }
+            for (j = 0; vars[j]; j++) {
+                klen = StrLen(vars[j]);
+
+                if (!MemCmp(p,vars[j],klen) &&
+                    (_vi_is_separator(*(p+klen)) || _vi_is_operator(*(p+klen))))
+                {
+                    // Class
+                    MemSet(row->hl+i, VI_HL_VAR, klen);
+                    p += klen;
+                    i += klen;
+                    break;
+                }
+            }
+            if (vars[j] != NULL) {
+                prev_sep = 0;
+                goto vi_eus_cont; // We had a glbl var match
+            }
+            for (j = 0; functions[j]; j++) {
+                klen = StrLen(functions[j]);
+
+                if (!MemCmp(p,functions[j],klen) &&
+                    (_vi_is_separator(*(p+klen)) || _vi_is_operator(*(p+klen))))
+                {
+                    // Class
+                    MemSet(row->hl+i, VI_HL_FUNCTION, klen);
+                    p += klen;
+                    i += klen;
+                    break;
+                }
+            }
+            if (functions[j] != NULL) {
+                prev_sep = 0;
+                goto vi_eus_cont; // We had a function match
             }
         }
 
@@ -588,6 +683,8 @@ U0 _vi_editorSelectSyntaxHighlight(vi_editorConfig *E, U8 *filename)
     E->syntax = CAlloc(sizeof(vi_editorSyntax));
     E->syntax->keywords = C_VI_HL_keywords;
     E->syntax->classes = C_VI_HL_classes;
+    E->syntax->vars = C_VI_HL_vars;
+    E->syntax->functions = C_VI_HL_functions;
     E->syntax->singleline_comment_start = "//";
     E->syntax->multiline_comment_start = "/*";
     E->syntax->multiline_comment_end = "*/";
@@ -622,19 +719,28 @@ U0 _vi_editorSyntaxToColor(EConsole *con, I64 val)
     {
         case VI_HL_COMMENT:
         case VI_HL_MLCOMMENT:
-            color = 0x55FEFE00;
+            color = 0xada28000;
             break;
         case VI_HL_KEYWORD:
-            color = 0xFEFE5500;
+            color = 0xf7287000;
             break;
         case VI_HL_CLASS:
-            color = 0x55FE5500;
+            color = 0x66d9ed00;
+            break;
+        case VI_HL_VAR:
+            color = 0xfc962100;
+            break;
+        case VI_HL_FUNCTION:
+            color = 0xa5e02f00;
             break;
         case VI_HL_STRING:
-            color = 0xFE55FE00;
+            color = 0xe6da7500;
             break;
         case VI_HL_NUMBER:
-            color = 0x55FEFE00;
+            color = 0xae82ff00;
+            break;
+        case VI_HL_OPERATOR:
+            color = 0xf7287000;
             break;
         case VI_HL_MATCH:
             color = 0x5555FE00;
@@ -1098,6 +1204,7 @@ U0 _vi_editorProcessKeypress(vi_editorConfig *E, EConsole *con)
                             E->cy = 0;
                         else if (ch == 25 && E->cy != E->screenrows-1) // PGDN
                             E->cy = E->screenrows-1;
+                            while (E->rowoff+E->cy>E->numrows) E->cy--;
                         I64 times = E->screenrows;
                         while(times--)
                             _vi_editorMoveCursor(E, cond(ch == 24, 17, 18));

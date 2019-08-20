@@ -139,3 +139,34 @@ U8 EOSSetGroup(CDirEntry *de, I64 group)
 {
     de->user_data.u16[2] = group;
 }
+
+U8 *EOSGetSupportedFileName(U8 *filename)
+{
+    U8 *i;
+    U8 *fname = StrNew(filename);
+    while (StrLen(fname)>EOS_FILENAME_LEN-1)
+    {
+        i=StrLastOcc(fname, ".");
+        if (!i) return -1;
+        while (i[-1]) i[-1]=*i++;
+    }
+    return fname;
+}
+
+U8 *EOSRead(U8 *filename, I64 *size=NULL)
+{ // TODO: Permissions
+    U8 *buf;
+    U8 *fname = EOSGetSupportedFileName(filename);
+    buf = FileRead(fname, size);
+    Free(fname);
+    return buf;
+}
+
+I64 EOSWrite(U8 *filename, U8 *buf, I64 size)
+{ // TODO: Permissions
+    I64 res;
+    U8 *fname = EOSGetSupportedFileName(filename);
+    res = FileWrite(fname, buf, size);
+    Free(fname);
+    return res;
+}
