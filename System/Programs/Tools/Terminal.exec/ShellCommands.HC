@@ -835,9 +835,9 @@ I64 CCMD_hcc(EConsole *con, I64 argc, U8 **argv)
     U8 *hcc_input_buf = NULL;
     while (!hcc_exit)
     {
-        con->fg_color=0x729FCF00;
+        ConSetColor(con, 0x729FCF00, con->bg_color);
         ConPrint(con, "> ");
-        con->fg_color=0xADE25D00;
+        ConSetColor(con, 0xADE25D00, con->bg_color);
         hcc_input_buf = ConReadLine(con, hcc_rl, 4096);
         doc_e = adam_task->put_doc->head;
         while (doc_e->next != adam_task->put_doc->head)
@@ -847,9 +847,9 @@ I64 CCMD_hcc(EConsole *con, I64 argc, U8 **argv)
         doc_e = doc_e->last;
         res = Adam(hcc_input_buf);
         doc_e = doc_e->next;
-        con->fg_color=0x729FCF00;
+        ConSetColor(con, 0x729FCF00, con->bg_color);
         ConDocDump(con, adam_task->put_doc, doc_e);
-        con->fg_color=0xADE25D00;
+        ConSetColor(con, 0x729FCF00, con->bg_color);
         ConPrint(con, "\n%d", res);
     }
     Free(hcc_rl->ac);
@@ -951,7 +951,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
     {
         EOSGetFileInfo(tmpde);
         cnt = 1;
-        con->fg_color=0xFFFFFF00;
+        ConSetColor(con, 0xFFFFFF00, con->bg_color);
         if (!(tmpde->name[0]=='.' && !(flags & 1 << CCMD_LS_OP_a)))
         {
             if (!(flags & 1 << CCMD_LS_OP_l))
@@ -959,7 +959,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
 
                 if (tmpde->attr & RS_ATTR_DIR)
                 {
-                    con->fg_color=0x729FCF00;
+                    ConSetColor(con, 0x729FCF00, con->bg_color);
                 }
 
                 if (tw > con->ch_width)
@@ -1044,7 +1044,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 }
                 if (tmpde->attr & RS_ATTR_DIR)
                 {
-                    con->fg_color=0x729FCF00;
+                    ConSetColor(con, 0x729FCF00, con->bg_color);
                 }
                 ConPrint(con, "%s\n", tmpde->name);
             }

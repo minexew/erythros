@@ -53,6 +53,7 @@
 
 #include "System/WindowManager";
 #include "/System/Programs/Tools/Terminal.exec/ShellCommands.HC";
+#include "/System/Programs/Tools/Terminal.exec/Shell.HC";
 
 #include "System/Libraries/Debugger";
 

@@ -164,12 +164,6 @@ U0 ConPutChar(EConsole *con, U8 ch)
     }
 }
 
-U0 ConSetColor(EConsole *con, U32 fg_color, U32 bg_color)
-{
-    con->fg_color = fg_color;
-    con->bg_color = bg_color;
-}
-
 U0 ConPrint(EConsole *con, U8 *fmt,...)
 {
     I64 _i;
@@ -187,6 +181,17 @@ U0 ConPrint(EConsole *con, U8 *fmt,...)
         ConPutChar(con, buf[_i]);
     }
     Free(buf);
+}
+
+U0 ConSetColor(EConsole *con, U32 fg_color, U32 bg_color)
+{
+    if (con->stdout)
+    {
+        ConPrint(con, "\x1b[38;2;%d;%d;%dm", fg_color.u8[3], fg_color.u8[2], fg_color.u8[1]);
+        if (con->bg_color) ConPrint(con, "\x1b[48;2;%d;%d;%dm", bg_color.u8[3], bg_color.u8[2], bg_color.u8[1]);
+    }
+    con->fg_color = fg_color;
+    con->bg_color = bg_color;
 }
 
 U0 ConClear(EConsole *con)

@@ -1,8 +1,3 @@
-U8 *shell_pmt = CAlloc(256);
-U8 *shell_input_buf;
-U8 *shell_cmd_buf = CAlloc(1024);
-U8 *shell_nul;
-
 I64 ShellGetCmdEntries(CHashTable *tbl, U8 **entries=NULL)
 {
 	I64 i;
@@ -86,7 +81,7 @@ U0 ShellRefreshACDirEntries(EConReadLine *rl)
 	ShellGetDirEntries(rl->ac->entries[1]);	
 }
 
-U0 ShellRefreshACCmdEntries(EConReadLine *rl)
+U0 ShellRefreshACCmdEntries(EConReadLine *rl, U64 ccmd_table)
 { // Refresh level 1 (command) entries.
 	if (!rl->ac)
 	{
@@ -99,12 +94,6 @@ U0 ShellRefreshACCmdEntries(EConReadLine *rl)
 	}
 }
 
-U0 ShellRefreshAutoComplete(EConReadLine *rl)
-{
-	ShellRefreshACCmdEntries(rl);
-	//ShellRefreshACDirEntries(rl);
-}
-
 U0 ShellInitHistory(EConReadLine *rl)
 {
 	rl->history = CAlloc(sizeof(EConHistory));
@@ -114,6 +103,13 @@ U0 ShellInitHistory(EConReadLine *rl)
 
 U0 Shell(EConsole *con)
 {
+	U64 ccmd_table = Fs->hash_table;
+	EConReadLine *shell_rl = CAlloc(sizeof(EConReadLine));
+	U8 *shell_pmt = CAlloc(256);
+	U8 *shell_input_buf;
+	U8 *shell_cmd_buf = CAlloc(1024);
+	U8 *shell_nul;	
+
 	I64 _i;
     I64 res;
 	I64 argc;
@@ -121,14 +117,15 @@ U0 Shell(EConsole *con)
 	U8 *shell_nul2;
 	U8 *shell_cur_dir = CAlloc(1024);
 	U8 *shell_prev_dir = CAlloc(1024);
+	Bool shell_exit = FALSE;
     CHashFun *ccmd;	
     I64 (*cexe)(EConsole *con, I64 argc, U8 **argv);
 
 	ConClear(con);
 	ShellInitHistory(shell_rl);
-	//ShellRefreshAutoComplete(shell_rl);
-	ShellRefreshACCmdEntries(shell_rl);
-	while (1)
+	ShellRefreshACCmdEntries(shell_rl, ccmd_table);
+
+	while (!shell_exit)
 	{
 		StrPrint(shell_cur_dir, "!:/%s", Fs->cur_dir);
 		shell_cur_dir[0] = Fs->cur_dv->drv_let;
@@ -137,6 +134,7 @@ U0 Shell(EConsole *con)
 			ShellRefreshACDirEntries(shell_rl);
 		//	StrPrint(shell_prev_dir, shell_cur_dir);
 		//}
+
         shell_nul = CAlloc(1024);
 		shell_nul2 = shell_nul;
 
@@ -150,16 +148,23 @@ U0 Shell(EConsole *con)
 		shell_nul = StrReplace(shell_nul, blkdev.home_dir, "~");
 		Free(shell_nul2);
         
-		StrPrint(con->win->title, "%s@%s: %s", wmgr->session->user, wmgr->session->hostname, shell_nul);
-		con->fg_color=0xADE25D00;
+		if (con->stdout)
+		{
+			ConPrint(con, "\x1b]0;%s@%s: %s\x07", wmgr->session->user, wmgr->session->hostname, shell_nul);
+		}
+		else
+		{
+			StrPrint(con->win->title, "%s@%s: %s", wmgr->session->user, wmgr->session->hostname, shell_nul);
+		}
+		ConSetColor(con, 0xADE25D00, con->bg_color);
 		StrPrint(shell_pmt, "%s@%s", wmgr->session->user, wmgr->session->hostname);
 		ConPrint(con, shell_pmt);
 
-		con->fg_color=0xFFFFFF00;
+		ConSetColor(con, 0xFFFFFF00, con->bg_color);
 		StrPrint(shell_pmt, ":");
 		ConPrint(con, shell_pmt);
 
-		con->fg_color=0x729FCF00; //dir
+		ConSetColor(con, 0x729FCF00, con->bg_color);
 		StrPrint(shell_pmt, "%s$$ ", shell_nul);
 		ConPrint(con, shell_pmt);
 
@@ -168,7 +173,7 @@ U0 Shell(EConsole *con)
 		argc = 0;
 		argv = NULL;
 
-		con->fg_color=0xFFFFFF00;
+		ConSetColor(con, 0xFFFFFF00, con->bg_color);
 		con->etx = FALSE;
 		shell_input_buf = ConReadLine(con, shell_rl, 4096);
 		if (!shell_input_buf)
@@ -184,10 +189,16 @@ U0 Shell(EConsole *con)
         {
 			if (!(StrCmp(argv[0], "exit")))
 			{
-				con->win->msg_close = TRUE;
-				while (1) { Sleep(1); };
+				if (con->stdout)
+				{
+					shell_exit = TRUE;
+				}
+				else
+				{
+					con->win->msg_close = TRUE;
+					while (1) { Sleep(1); };
+				}
 			}
-
 			shell_rl->history->pos++;
 			if (shell_rl->history->pos > shell_rl->history->limit)
 			{

@@ -14,39 +14,19 @@ class ETelnetSession
 #define TELNET_DONT 254
 #define TELNET_IAC  255
 
-I64 TelnetSvcShell(ETelnetSession *ts)
+I64 TelnetSvcLogin(ETelnetSession *ts)
 {
     I64 i;
-    CHashFun *ccmd;	
-    I64 (*cexe)(EConsole *con, I64 argc, U8 **argv);
-    U64 ccmd_table = Fs->hash_table;
+    I64 tries = 0;
+    Bool shell_exit = FALSE;
     EConReadLine *sh_rl = CAlloc(sizeof(EConReadLine));
-
 	sh_rl->history = CAlloc(sizeof(EConHistory));
     sh_rl->ac = CAlloc(sizeof(EConAutoComplete));
-
-	U8 *shell_cur_dir = CAlloc(1024);
-	U8 *shell_prev_dir = CAlloc(1024);
-
-    U8 *shell_pmt = CAlloc(256);
-    U8 *shell_input_buf;
-    U8 *shell_cmd_buf = CAlloc(1024);
-    U8 *shell_nul;
-    U8 *shell_nul2;
-
     U8 *user;
     U8 *pass;
-
-    Bool shell_exit = FALSE;
-
-    I64 res;
-    U8 **argv = NULL;
-    I64 argc = 0;
-
 ts_do_login:
     user = NULL;
     pass = NULL;
-
     while (!StrLen(user) || !user)
     {
         if (user) { Free(user); };
@@ -57,9 +37,7 @@ ts_do_login:
     ts->con->disable_echo = TRUE;
     pass = ConReadLine(ts->con, sh_rl, 1024);
     ts->con->disable_echo = FALSE;
-
     ConPrint(ts->con, "\n");
-
     for (i=0;i<EOS_MAX_USERS;i++)
     {
         if (!StrCmp(eos_users[i].name, user) && eos_users[i].user)
@@ -70,95 +48,19 @@ ts_do_login:
             }
         }
     }
-
     Free(user);
     Free(pass);
     Sleep(2000);
     ConPrint(ts->con, "\nLogin incorrect");
-    goto ts_do_login;
-
-ts_do_shell:
-    while (!shell_exit)
-    {       
-		StrPrint(shell_cur_dir, "!:/%s", Fs->cur_dir);
-		shell_cur_dir[0] = Fs->cur_dv->drv_let;
-        shell_nul = CAlloc(1024);
-		shell_nul2 = shell_nul;
-        StrPrint(shell_nul, "!:%s", Fs->cur_dir);
-        shell_nul[0] = Fs->cur_dv->drv_let;
-		shell_nul = StrReplace(shell_nul, blkdev.home_dir, "~");
-		Free(shell_nul2);
-
-		ConPrint(ts->con, "\x1b]0;%s@%s: %s\x07", wmgr->session->user, wmgr->session->hostname, shell_nul);
-        
- 		StrPrint(shell_pmt, "\x1b[1;32m%s@%s", wmgr->session->user, wmgr->session->hostname);        
-		ConPrint(ts->con, shell_pmt);
-		StrPrint(shell_pmt, "\x1b[0;37m:\x1b[1;34m");
-		ConPrint(ts->con, shell_pmt);
-		StrPrint(shell_pmt, "%s\x1b[0;39m$$ ", shell_nul);
-		ConPrint(ts->con, shell_pmt);
-    
-		Free(shell_nul);
-
-        argc = 0;
-        shell_input_buf = ConReadLine(ts->con, sh_rl, 4096);
-
-        if (!shell_input_buf)
-		{
-			goto ts_prompt_next;
-		}
-
-		// TODO: add history item / env variable expansion here, before ParseArgs
-		// ex: !(hist_idx)
-
-		argv = ParseArgs(shell_input_buf, &argc);
-        if (argc)
-        {
-			if (!(StrCmp(argv[0], "exit")))
-			{
-                Sleep(10);
-                shell_exit = TRUE;
-                goto ts_prompt_next;
-			}
-
-            /*
-			sh_rl->history->pos++;
-			if (sh_rl->history->pos > sh_rl->history->limit)
-			{
-				MemCpy(sh_rl->history->entries, sh_rl->history->entries+8, sh_rl->history->limit-1);
-				sh_rl->history->pos--;
-			}
-			sh_rl->history->entries[sh_rl->history->pos-1] = StrNew(shell_input_buf);
-            */
-
-            StrPrint(shell_cmd_buf, "CCMD_%s", argv[0]);
-            ccmd = HashFind(shell_cmd_buf, ccmd_table, -1);
-            if (ccmd)
-            {
-                cexe = ccmd->exe_addr;
-				ts->con->rl = sh_rl;
-                res = cexe(ts->con, argc, argv);
-                goto ts_prompt_next;
-            }
-            else
-            {
-            }
-            ConPrint(ts->con, "%s: command not found\n", argv[0]);
-        }
-ts_prompt_next:
-        if (argc)
-        {
-    		FreeArgs(argc, argv);
-        }
-		if (shell_input_buf)
-		{
-			Free(shell_input_buf);
-		}
+    tries++;
+    if (tries>2)
+    {
+        ConPrint(ts->con, "\n");
+        return;
     }
-    Free(shell_pmt);
-    Free(shell_cmd_buf);
-    Free(shell_cur_dir);
-    Free(shell_prev_dir);
+    goto ts_do_login;
+ts_do_shell:
+    Shell(ts->con);
 }
 
 I64 TelnetSvcClientInputHandler(ETelnetSession *ts)
@@ -245,7 +147,7 @@ I64 TelnetSvcSession(CTcpSocket *s)
     con->ch_height = 25;
     ts->s = s;
     ts->con = con;
-    CTask *shell_proc_task=Spawn(&TelnetSvcShell, ts, , mp_cnt-3);
+    CTask *shell_proc_task=Spawn(&TelnetSvcLogin, ts, , mp_cnt-3);
     U8 buf[2];
     buf[1] = NULL;
     CTask *shell_input_task=Spawn(&TelnetSvcClientInputHandler, ts,,mp_cnt-2);
