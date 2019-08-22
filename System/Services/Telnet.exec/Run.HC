@@ -67,6 +67,7 @@ I64 TelnetSvcClientInputHandler(ETelnetSession *ts)
 {
     U8 cmd_s_resp[3];
     I64 cmd_state = NULL;
+    I64 esc_state = NULL;
     U8 cmd_resp = NULL;
     I64 i, got;
     U8 *buf=CAlloc(128);
@@ -106,7 +107,53 @@ I64 TelnetSvcClientInputHandler(ETelnetSession *ts)
                     {
                         case 0:
                             break;
+                        case 'A'...'D':
+                            if (esc_state==2)
+                            {
+                                switch (buf[i])
+                                {
+                                    case 'A':
+                                        FifoU8Ins(ts->con->stdin, 17);
+                                        break;
+                                    case 'B':
+                                        FifoU8Ins(ts->con->stdin, 18);
+                                        break;
+                                    case 'D':
+                                        FifoU8Ins(ts->con->stdin, 20);
+                                        break;
+                                    case 'C':
+                                        FifoU8Ins(ts->con->stdin, 19);
+                                        break;
+                                    default:
+                                        break;
+                                };
+                            }
+                            else
+                            {
+                                FifoU8Ins(ts->con->stdin, buf[i]);
+                            }
+                            esc_state = NULL;
+                            break;
+                        case '[':
+                            if (esc_state==1)
+                            {
+                                esc_state++;
+
+                            }
+                            else
+                            {
+                                esc_state = NULL;
+                                FifoU8Ins(ts->con->stdin, buf[i]);
+                            }
+                            break;
+                        case 0x1b:
+                            if (!esc_state)
+                            {
+                                esc_state++;
+                            }
+                            break;
                         case TELNET_IAC:
+                            esc_state = NULL;
                             if (!cmd_state)
                             {
                                 cmd_state++;
@@ -118,12 +165,15 @@ I64 TelnetSvcClientInputHandler(ETelnetSession *ts)
                             }
                             break;
                         case '\x0d':
+                            esc_state = NULL;
                             FifoU8Ins(ts->con->stdin, '\x0a');
                             break;                            
                         case '\x7f':
+                            esc_state = NULL;
                             FifoU8Ins(ts->con->stdin, '\x08');
                             break;
                         default:
+                            esc_state = NULL;
                             FifoU8Ins(ts->con->stdin, buf[i]);
                             break;         
                     };  
