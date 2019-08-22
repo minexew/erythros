@@ -1989,6 +1989,98 @@ I64 CCMD_rmdir(EConsole *con, I64 argc, U8 **argv)
     return retval;
 }
 
+I64 CCMD_service(EConsole *con, I64 argc, U8 **argv)
+{
+    EService *svc = eos_services->next;
+    Bool enabled;
+    I64 status;
+    if (argc > 1)
+    {
+        if (!StrCmp(argv[1], "list")) /* List all registered services */
+        {
+            while (svc)
+            {
+                ConPrint(con, "%s\n", svc->name);
+                svc = svc->next;
+            }
+            return 0;
+        }
+    }
+    if (argc < 3)
+    {
+        goto smctrl_usage;
+    }
+
+    if (!StrCmp(argv[1], "start") || !StrCmp(argv[1], "status") || !StrCmp(argv[1], "stop") )
+    {
+        enabled = EOSQueryServiceEnabled(argv[2]); 
+        if (enabled<0)
+        {
+            ConPrint(con, "service: invalid service '%s'\n", argv[2]);
+            return 1;
+        }
+        if (!enabled)
+        {
+            if (!!StrCmp(argv[1], "status"))
+            {
+                ConPrint(con, "service '%s' is disabled\n", argv[2]);
+            }
+        }
+        else
+        {
+            status = EOSQueryServiceStatus(argv[2]);
+            if (!StrCmp(argv[1], "start"))
+            {
+                if (status==EOS_SVC_RUNNING)
+                {
+                    ConPrint(con, "service '%s' is already running\n", argv[2]);
+                    return -1;
+                }
+                EOSStartService(argv[2]);
+                return 0;
+            }
+            if (!StrCmp(argv[1], "stop"))
+            {
+                if (status==EOS_SVC_STOPPED)
+                {
+                    ConPrint(con, "service '%s' is already stopped\n", argv[2]);
+                    return -1;
+                }
+                EOSStopService(argv[2]);
+                return 0;
+            }
+        }
+        
+        if (!StrCmp(argv[1], "status"))
+        {
+            ConPrint(con, "service '%s' is ", argv[2]);
+            if (enabled)
+            {
+                ConPrint(con, "enabled\nstatus: ");
+                switch (EOSQueryServiceStatus(argv[2]))
+                {
+                    case EOS_SVC_STOPPED:
+                        ConPrint(con, "stopped\n");
+                        break;
+                    case EOS_SVC_RUNNING:
+                        ConPrint(con, "running\n");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                ConPrint(con, "disabled\n");
+            }
+        }
+        return 0;
+    }
+smctrl_usage:
+    ConPrint(con, "usage: service command [service-name]\n");
+    return 1;
+}
+
 #define CCMD_UNAME_OP_s     0
 #define CCMD_UNAME_OP_n     1
 #define CCMD_UNAME_OP_r     2

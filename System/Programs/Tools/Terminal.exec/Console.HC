@@ -100,6 +100,18 @@ U0 ConPutChar(EConsole *con, U8 ch)
     {
         return;
     }
+    if (con->stdout)
+    {
+        if (ch=='\x0a') FifoU8Ins(con->stdout, '\x0d'); 
+        FifoU8Ins(con->stdout, ch);
+        if (ch=='\x08')
+        {
+            FifoU8Ins(con->stdout, '\x1b');
+            FifoU8Ins(con->stdout, '[');
+            FifoU8Ins(con->stdout, 'P');
+        }
+        return;
+    }
     switch (ch)
     {
         case 8:
@@ -152,21 +164,6 @@ U0 ConPutChar(EConsole *con, U8 ch)
     }
 }
 
-U0 ConClear(EConsole *con)
-{
-    I64 _i;
-	DCFill(con->ch_buf, 0);
-	for (_i=0;_i<display.width*128;_i++)
-	{
-		con->fg_buf[_i]=0xFFFFFF00;
-		con->bg_buf[_i]=con->fill_color;
-	}
-    con->scroll_x=0;
-    con->scroll_y=0;
-    con->screen_x=0;
-    con->screen_y=0;
-}
-
 U0 ConSetColor(EConsole *con, U32 fg_color, U32 bg_color)
 {
     con->fg_color = fg_color;
@@ -191,6 +188,27 @@ U0 ConPrint(EConsole *con, U8 *fmt,...)
     }
     Free(buf);
 }
+
+U0 ConClear(EConsole *con)
+{
+    if (con->stdout)
+    {
+        ConPrint(con, "\x1b[2J\x1b[0;0H");
+        return;
+    }
+    I64 _i;
+	DCFill(con->ch_buf, 0);
+	for (_i=0;_i<display.width*128;_i++)
+	{
+		con->fg_buf[_i]=0xFFFFFF00;
+		con->bg_buf[_i]=con->fill_color;
+	}
+    con->scroll_x=0;
+    con->scroll_y=0;
+    con->screen_x=0;
+    con->screen_y=0;
+}
+
 extern U0 ShellRefreshAutoComplete(EConReadLine *rl);
 
 U8 *StrCommonMatch(I64 size, U8 **strs)

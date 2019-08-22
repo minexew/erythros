@@ -447,8 +447,8 @@ EConsole *NewConsole(EWindow *win, EWidget *wgt)
 	}
 	
 	con->stdin=FifoU8New(1024);
-	con->stdout=FifoU8New(1024);
-	con->stderr=FifoU8New(1024);
+	//con->stdout=FifoU8New(1024);
+	//con->stderr=FifoU8New(1024);
 
 	con->hl_x1=-1;
 	con->hl_x2=-1;
@@ -747,6 +747,7 @@ U0 EWMTask()
 
 	// Startup tasks:
 	EWMNewTask("T:/System/Programs/Tools/System Monitor.exec");
+
 	Spawn(&Netcfg,,,mp_cnt-1);
 	
 	while (1) //The ride never ends...

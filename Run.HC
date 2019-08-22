@@ -20,6 +20,7 @@
 #include "System/Libraries/MD5";
 #include "System/Libraries/GUI";
 #include "System/Libraries/User";
+#include "System/Libraries/Services";
 
 #include "/System/Programs/Tools/Terminal.exec/FixedWidthFont.HC";
 #include "/System/Programs/Tools/Terminal.exec/Console.HC";
@@ -58,6 +59,8 @@
 #include "System/Libraries/Speech/Reciter";
 #include "System/Libraries/Speech/SAM";
 
+#include "/System/Services/Telnet.exec/Run.HC";
+
 // Zero all TOS Kernel callbacks for CTRL-ALT shortcuts
 MemSet(keydev.fp_ctrl_alt_cbs, 0, 0xD0);
 
@@ -81,6 +84,10 @@ wmgr->session->hostname = "erythros-vm";
 
 Copy("T:/System/Drivers/pci.ids", "B:/PciDevices.DD.Z");
 ToDolDoc("B:/PciDevices.DD.Z");
+
+// Register System Services
+EOSRegisterService("telnet", &TelnetSvc,,&TelnetSvcShutdown);
+EOSEnableService("telnet");
 
 // Start the window manager
 wmgr->task = Spawn(&EWMTask,,,mp_cnt-2);

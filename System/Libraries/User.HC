@@ -11,6 +11,24 @@ class EOSUser
 
 EOSUser *eos_users = CAlloc(sizeof(EOSUser)*EOS_MAX_USERS);
 
+Bool EOSPasswordMatch(I64 uid, U8 *passwd)
+{
+    U32 md5_h[4];
+    U8 md5_str[256];
+    MemSet(&md5_str, 0, 256);
+    md5(passwd, StrLen(passwd), &md5_h[0]);
+    StrPrint(&md5_str, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+        md5_h[0].u8[0], md5_h[0].u8[1], md5_h[0].u8[2], md5_h[0].u8[3],
+        md5_h[1].u8[0], md5_h[1].u8[1], md5_h[1].u8[2], md5_h[1].u8[3],
+        md5_h[2].u8[0], md5_h[2].u8[1], md5_h[2].u8[2], md5_h[2].u8[3],
+        md5_h[3].u8[0], md5_h[3].u8[1], md5_h[3].u8[2], md5_h[3].u8[3]);
+    if (!StrCmp(&md5_str, eos_users[uid].passwd))
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 U0 SetUpDebugUsers()
 {
     U32 md5_h[4];
@@ -18,7 +36,7 @@ U0 SetUpDebugUsers()
     StrPrint(eos_users[10].name, "staff");
     StrPrint(eos_users[10].fullname, "Staff Group");
 
-    StrPrint(eos_users[0].user, TRUE);
+    eos_users[0].user = TRUE;
     StrPrint(eos_users[0].name, "user");
     StrPrint(eos_users[0].fullname, "Erythros User");
     eos_users[0].groups[1] = 10;
