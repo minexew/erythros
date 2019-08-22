@@ -22,6 +22,25 @@ class CDirEntryRaw
   CDate datetime;    
 };
 
+Bool EOSPathExists(U8 *path)
+{
+    CDirEntry *de = NULL;
+    if (path[1]==':')
+    {
+        if (!Let2Drv(path[0],0))
+        {
+            return FALSE;
+        }
+    }
+    de = FilesFind(path);
+    if (!de)
+    {
+        return FALSE;
+    }
+    DirTreeDel(de);
+    return TRUE;
+}
+
 I64 EOSGetFileInfo(CDirEntry *de)
 {// Retrieve EOS File Info 
     if (de->attr & EOS_ATTR_PERMS && !de->name[EOS_FILENAME_LEN-1])

@@ -195,7 +195,7 @@ I64 CCMD_cat(EConsole *con, I64 argc, U8 **argv)
         de = FilesFind(argv[i]);
         if (de)
         {
-            if (de->attr & RS_ATTR_DIR == RS_ATTR_DIR)
+            if (de->attr & RS_ATTR_DIR)
             {
                 ConPrint(con, "cat %s: Is a directory\n", argv[i]);
             }
@@ -265,14 +265,13 @@ I64 CCMD_cd(EConsole *con, I64 argc, U8 **argv)
         ConPrint(con, "esh: cd: too many arguments\n");
         return 1;
     }
-    CDirEntry *tmpde = FilesFind(argv[1]);
-    if (!tmpde)
+    if (!EOSPathExists(argv[1]))
     {
         ConPrint(con, "esh: cd: %s: No such file or directory\n", argv[1]);
-        DirTreeDel(tmpde);
         return 1;
     }
-    if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
+    CDirEntry *tmpde = FilesFind(argv[1]);
+    if (tmpde->attr & RS_ATTR_DIR)
     {
         Cd(argv[1]);
     }
@@ -299,7 +298,6 @@ I64 CCMD_clear(EConsole *con, I64 argc, U8 **argv)
 
 I64 CCMD_cp(EConsole *con, I64 argc, U8 **argv)
 {
-    CDirEntry *tmpde;
     if (argc < 3)
     {
         ConPrint(con, "cp: missing destination file operand after '%s'\n", argv[1]);
@@ -310,14 +308,12 @@ I64 CCMD_cp(EConsole *con, I64 argc, U8 **argv)
         ConPrint(con, "cp: missing file operand\n");
         return 1;
     }
-    tmpde = FilesFind(argv[1]);
-    if (!tmpde)
+    if (!EOSPathExists(argv[1]))
     {
         ConPrint(con, "cp: cannot stat '%s': No such file or directory\n", argv[1]);
         return 1;
     }
-    Copy(argv[1], argv[2]);
-    DirTreeDel(tmpde);
+    Copy(argv[1], argv[2]); // TODO: validate destination
 }
 
 I64 CCMD_echo(EConsole *con, I64 argc, U8 **argv)
@@ -1046,7 +1042,7 @@ U0 _CCMD_ls_output(EConsole *con, CDirEntry *de, I64 flags)
                 {
                     ConPrint(con, "%02d:%02d ", ds->hour, ds->min);
                 }
-                if (tmpde->attr & RS_ATTR_DIR == RS_ATTR_DIR)
+                if (tmpde->attr & RS_ATTR_DIR)
                 {
                     con->fg_color=0x729FCF00;
                 }
@@ -1114,9 +1110,9 @@ I64 CCMD_ls(EConsole *con, I64 argc, U8 **argv)
         {
             if (argv[i][0] != '-')
             {
-                de = FilesFind(argv[i]);
-                if (de)
+                if (!EOSPathExists(argv[i]))
                 {
+                    de = FilesFind(argv[i]);   
                     _CCMD_ls_output(con, de, flags);
                 }
                 else
@@ -1629,7 +1625,7 @@ I64 CCMD_md5sum(EConsole *con, I64 argc, U8 **argv)
     }
     for (i=1; i<argc; i++)
     {
-        if (!FileFind(argv[i]))
+        if (!EOSPathExists(argv[i]))
         {
             ConPrint(con, "md5sum: %s: No such file or directory\n");
             retval = 1;
@@ -1682,7 +1678,6 @@ I64 CCMD_mkdir(EConsole *con, I64 argc, U8 **argv)
 
 I64 CCMD_mv(EConsole *con, I64 argc, U8 **argv)
 {
-    CDirEntry *tmpde;
     if (argc < 3)
     {
         ConPrint(con, "mv: missing destination file operand after '%s'\n", argv[1]);
@@ -1693,14 +1688,12 @@ I64 CCMD_mv(EConsole *con, I64 argc, U8 **argv)
         ConPrint(con, "mv: missing file operand\n");
         return 1;
     }
-    tmpde = FilesFind(argv[1]);
-    if (!tmpde)
+    if (!EOSPathExists(argv[1]))
     {
         ConPrint(con, "mv: cannot stat '%s': No such file or directory\n", argv[1]);
         return 1;
     }
-    Move(argv[1], argv[2]);
-    DirTreeDel(tmpde);
+    Move(argv[1], argv[2]); // TODO: validate destination
 }
 
 I64 CCMD_nslookup(EConsole *con, I64 argc, U8 **argv)
@@ -1894,15 +1887,15 @@ I64 CCMD_rm(EConsole *con, I64 argc, U8 **argv)
     for (i=1; i<argc; i++)
     {
         if (argv[i][0] != '-')
-        {
-            tmpde = FilesFind(argv[i]);
-            if (!tmpde)
+        {            
+            if (!EOSPathExists(argv[i]))
             {
                     ConPrint(con, "rm: cannot remove '%s': No such file or directory\n", argv[i]);
                     retval = 1;
             }
             else
             {
+                tmpde = FilesFind(argv[i]);
                 tmpde2 = tmpde;
                 while (tmpde2)
                 {
@@ -1953,7 +1946,7 @@ I64 CCMD_rmdir(EConsole *con, I64 argc, U8 **argv)
     }
     for (i=1; i<argc; i++)
     {
-        if (!FileFind(argv[i]))
+        if (!EOSPathExists(argv[i]))
         {
             ConPrint(con, "rmdir: failed to remove '%s': No such file or directory\n", argv[i]);
             retval = 1;
