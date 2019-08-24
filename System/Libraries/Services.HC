@@ -19,9 +19,9 @@ EService *eos_services = CAlloc(sizeof(EService));
 
 U0 EOSRegisterService(U8 *name, U64 func, I64 flags=NULL, U64 cb=NULL) {
     EService *prev = eos_services;
-    while (eos_services->next)
+    while (prev->next)
     {
-        eos_services = eos_services->next;
+        prev = prev->next;
     }
     EService *new = CAlloc(sizeof(EService));
     new->name = StrNew(name);

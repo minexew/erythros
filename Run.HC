@@ -60,6 +60,7 @@
 #include "System/Libraries/Speech/Reciter";
 #include "System/Libraries/Speech/SAM";
 
+#include "/System/Services/FTP.exec/Run.HC";
 #include "/System/Services/Telnet.exec/Run.HC";
 
 // Zero all TOS Kernel callbacks for CTRL-ALT shortcuts
@@ -87,6 +88,9 @@ Copy("T:/System/Drivers/pci.ids", "B:/PciDevices.DD.Z");
 ToDolDoc("B:/PciDevices.DD.Z");
 
 // Register System Services
+EOSRegisterService("ftp", &FTPSvc,,&FTPSvcShutdown);
+EOSEnableService("ftp");
+
 EOSRegisterService("telnet", &TelnetSvc,,&TelnetSvcShutdown);
 EOSEnableService("telnet");
 

@@ -85,6 +85,7 @@ class vi_editorConfig {
     Bool quit;  /* Quit program */
     I64 cx,cy;  /* Cursor x and y position in characters */
     I64 rowoff;     /* Offset of row displayed. */
+    I64 last_rowoff;
     I64 coloff;     /* Offset of column displayed. */
     I64 screenrows; /* Number of rows that we can show */
     I64 screencols; /* Number of cols that we can show */
@@ -92,6 +93,7 @@ class vi_editorConfig {
     I64 rawmode;    /* Is terminal raw mode enabled? */
     vi_erow *row;      /* Rows */
     I64 dirty;      /* File modified but not saved. */
+    I64 last_dirty;
     Bool init;
     Bool incmd; /* Are we inside of a command? */
     I64 cmd; /* Command */
@@ -327,7 +329,8 @@ EConsole *_vi_SaveAndInitConsoleState(EConsole *con)
 	con->ch_buf = ch_buf;
 	con->fg_buf = fg_buf;
 	con->bg_buf = bg_buf;
-    _vi_ResetAllRows(con);   
+    //_vi_ResetAllRows(con);   
+    ConClear(con);
     return state;
 }
 
@@ -694,10 +697,12 @@ U0 _vi_initEditor(vi_editorConfig *E, EConsole *con) {
     E->cx = 0;
     E->cy = 0;
     E->rowoff = 0;
+    E->last_rowoff = -1;
     E->coloff = 0;
     E->numrows = 0;
     E->row = NULL;
     E->dirty = 0;
+    E->last_dirty = -1;
     E->init = TRUE;
     E->quit = FALSE;
     E->filename = NULL;
@@ -766,10 +771,15 @@ U0 _vi_editorRefreshScreen(vi_editorConfig *E, EConsole *con) {
     /* Go home. */
     con->scroll_x = 0;
     con->scroll_y = 0;
-    con->screen_x = 0;
-    con->screen_y = 0;
+    ConSetCursor(con, 0, 0);
 
-    _vi_ResetAllRows(con);
+    if (E->dirty!=E->last_dirty || E->rowoff!=E->last_rowoff)
+    {
+        E->last_dirty = E->dirty;
+        E->last_rowoff = E->rowoff;
+
+    //_vi_ResetAllRows(con);
+    ConClear(con);
 
     for (y = 0; y < E->screenrows; y++) {
         I64 filerow = E->rowoff+y;
@@ -829,6 +839,7 @@ vi_ers_cont:
         ConSetColor(con, 0xFFFFFF00, 0);
         ConPrint(con, "\n");
     }
+    }
 
     // TODO: config tab size
 
@@ -844,8 +855,7 @@ vi_ers_cont:
             cx++;
         }
     }
-    con->screen_x = cx-1;
-    con->screen_y = E->cy;
+    ConSetCursor(con, cx-1, E->cy);
 
     I64 prev_x, prev_y;
 
@@ -856,38 +866,32 @@ vi_ers_cont:
             if (StrLen(E->statusmsg)) StrPrint(E->statusmsg, "");
             prev_x = con->screen_x;
             prev_y = con->screen_y;
-            con->screen_x = 0;
-            con->screen_y = E->screenrows;
+            ConSetCursor(con, 0, E->screenrows);
             ConSetColor(con, 0, 0xFEFEFE00);
             ConPrint(con, "-- INSERT --");
             ConSetColor(con, 0xFFFFFF00, 0);
-            con->screen_x = prev_x;
-            con->screen_y = prev_y;
+            ConSetCursor(con, prev_x, prev_y);
             break;
         case VI_MODE_NORMAL:
             if (StrLen(E->errormsg))
             {
                 prev_x = con->screen_x;
                 prev_y = con->screen_y;
-                con->screen_x = 0;
-                con->screen_y = E->screenrows;
+                ConSetCursor(con, 0, E->screenrows);
                 ConSetColor(con, 0xFFFFFF00, 0xFE000000);
                 ConPrint(con, E->errormsg);
                 ConSetColor(con, 0xFFFFFF00, 0);
-                con->screen_x = prev_x;
-                con->screen_y = prev_y;
+                ConSetCursor(con, prev_x, prev_y);
             }
             if (StrLen(E->statusmsg) && !StrLen(E->errormsg))
             {
                 prev_x = con->screen_x;
                 prev_y = con->screen_y;
-                con->screen_x = 0;
-                con->screen_y = E->screenrows;
+                ConSetCursor(con, 0, E->screenrows);
                 ConSetColor(con, 0, 0xFEFEFE00);
                 ConPrint(con, E->statusmsg);
                 ConSetColor(con, 0xFFFFFF00, 0);
-                con->screen_x = prev_x;
-                con->screen_y = prev_y;
+                ConSetCursor(con, prev_x, prev_y);
             }
             break;
         default:
@@ -1238,8 +1242,7 @@ U0 _vi_editorProcessKeypress(vi_editorConfig *E, EConsole *con)
 
                         prev_x = con->screen_x;
                         prev_y = con->screen_y;
-                        con->screen_x = 0;
-                        con->screen_y = E->screenrows;
+                        ConSetCursor(con, 0, E->screenrows);
                         ConSetColor(con, 0xFFFFFF00, 0);
                         ConPrint(con, ":");
                         E->cmdbuf = ConReadLine(con, vim_rl, 4096); // not sure how I feel about a ReadLine for this? :/                       
@@ -1265,8 +1268,7 @@ U0 _vi_editorProcessKeypress(vi_editorConfig *E, EConsole *con)
                                 StrPrint(E->errormsg, "E212: Can't open file for writing");
                             }
                         }
-                        con->screen_x = prev_x;
-                        con->screen_y = prev_y;
+                        ConSetCursor(con, prev_x, prev_y);
                         Free(vim_rl->ac);
                         Free(vim_rl->history);
                         Free(vim_rl);

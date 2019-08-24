@@ -183,6 +183,16 @@ U0 ConPrint(EConsole *con, U8 *fmt,...)
     Free(buf);
 }
 
+U0 ConSetCursor(EConsole *con, I64 x, I64 y)
+{
+    if (con->stdout)
+    {
+        ConPrint(con, "\x1b[%d;%dH", y, x);
+    }
+    con->screen_x = x;
+    con->screen_y = y;
+}
+
 U0 ConSetColor(EConsole *con, U32 fg_color, U32 bg_color)
 {
     if (con->stdout)

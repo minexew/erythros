@@ -149,6 +149,7 @@ I64 TelnetSvcClientInputHandler(ETelnetSession *ts)
                         case 0x1b:
                             if (!esc_state)
                             {
+                                FifoU8Ins(ts->con->stdin, '\x1b');
                                 esc_state++;
                             }
                             break;
@@ -197,7 +198,7 @@ I64 TelnetSvcSession(CTcpSocket *s)
     con->ch_height = 25;
     ts->s = s;
     ts->con = con;
-    CTask *shell_proc_task=Spawn(&TelnetSvcLogin, ts, , mp_cnt-3);
+    CTask *shell_proc_task=Spawn(&TelnetSvcLogin, ts, , mp_cnt-1);
     U8 buf[2];
     buf[1] = NULL;
     CTask *shell_input_task=Spawn(&TelnetSvcClientInputHandler, ts,,mp_cnt-2);
@@ -233,7 +234,7 @@ U0 TelnetSvcShutdown()
     tcp_bound_sockets[EOS_TELNET_PORT] = NULL;
 }
 
-U0 TelnetSvc()
+I64 TelnetSvc()
 {
     while (!my_ip) { Sleep(1); }; // Wait for Netcfg
     CTcpSocket *sock = socket(AF_INET, SOCK_STREAM);
