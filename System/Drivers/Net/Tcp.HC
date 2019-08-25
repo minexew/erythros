@@ -836,17 +836,7 @@ U0 TcpSocketHandle(CTcpSocket* s, CIPv4Packet* packet, CTcpHeader* hdr, U8* data
       // Accept ACK
       s->snd_una = seg_ack;
 
-      /* "Fix" for FTP STOR connection timeout */
-      if (hdr->flags & TCP_FLAG_FIN) {
-        s->rcv_nxt++;
-        TcpSend2(s, TCP_FLAG_ACK);
-        Sleep(250);
-        s->state = TCP_STATE_CLOSED;
-        return;
-      }
-      else if (s->state == TCP_STATE_SYN_SENT && (hdr->flags & TCP_FLAG_SYN)) {      
-
-      //if (s->state == TCP_STATE_SYN_SENT && (hdr->flags & TCP_FLAG_SYN)) {
+      if (s->state == TCP_STATE_SYN_SENT && (hdr->flags & TCP_FLAG_SYN)) {
         s->state = TCP_STATE_ESTABLISHED;
         s->srtt = tS - s->conntime;
         //"Initial RTT: %f ms", s->srtt * 1000;

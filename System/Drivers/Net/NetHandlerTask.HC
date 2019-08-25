@@ -17,17 +17,7 @@ U0 HandleNetFifoEntry(CNetFifoEntry* e) {
   }
 }
 
-U0 NetHandlerTask(I64) {
-  while (1) {
-    CNetFifoEntry* e = NetFifoPull;
-    if (e) {
-      HandleNetFifoEntry(e);
-    }
-    Yield;
-  }
-}
-
-U0 VirtioNetRxHandler()
+U0 VirtioNetHandlerTask()
 {
   I64 idx_used, idx_rec;
   I64 i,j;
@@ -62,10 +52,13 @@ U0 VirtioNetRxHandler()
       virtio_net.rq->available.index += j;
       OutU16(virtio_net.port + VIRTIO_PCI_QUEUE_NOTIFY, 0);  
     }
+    CNetFifoEntry* e = NetFifoPull;
+    if (e) {
+      HandleNetFifoEntry(e);
+    }
     Yield;
   }
 }
 
 EthernetInit;
-Spawn(&VirtioNetRxHandler,,,mp_cnt-1);
-Spawn(&NetHandlerTask,,,mp_cnt-1);
+Spawn(&VirtioNetHandlerTask,,,mp_cnt-1);
