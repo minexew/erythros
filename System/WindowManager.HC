@@ -14,6 +14,48 @@ EContext2D *tb_ctrl_sound = tb_ctrl_sound_normal;
 
 EContext2D *tb_ctrl_net = LoadPNG("System/Media/Themes/Default/Icons/16/network_ethernet.png");
 
+U0 EWMDelDesktopItem(EDesktopItem *item, Bool free_ctx=FALSE)
+{
+	EDesktopItem *tmp_ditem = wmgr->desktop_items->next;
+	EDesktopItem *prev_ditem = NULL;
+	EDesktopItem *next_ditem = NULL;
+	while (tmp_ditem)
+	{
+		if (tmp_ditem == item)
+		{
+			prev_ditem = tmp_ditem->prev;
+			next_ditem = tmp_ditem->next;
+			if (prev_ditem)
+			{
+				prev_ditem->next = next_ditem;
+			}
+			if (next_ditem)
+			{
+				next_ditem->prev = prev_ditem;
+			}
+			if (free_ctx)
+			{
+				DelContext2D(item->ctx);
+			}
+			Free(item);
+			return;
+		}
+		tmp_ditem = tmp_ditem->next;
+	}
+}
+
+U0 EWMAddDesktopItem(EDesktopItem *item)
+{
+	EDesktopItem *tmp_ditem = wmgr->desktop_items;
+	while (tmp_ditem->next)
+	{
+		tmp_ditem = tmp_ditem->next;
+	}
+	tmp_ditem->next = item;
+	item->prev = tmp_ditem;
+	item->next = NULL;
+}
+
 extern U0 EWMDelContextMenu(EContextMenu *cmenu);
 
 U0 EWMDelContextMenuItem(EContextMenuItem *item)
@@ -566,6 +608,18 @@ U0 EWMCallback(U64 cmd, I64 id, ETask *task, U8 *path=NULL)
 	wmgr->hover_cmenu=-1;
 }
 
+U0 EWMLoadTTF(U8 *filename)
+{
+	if (!FileFind(filename)) { return; }
+	ttf_TrueTypeFont *fonts = wmgr->ttf_fonts;
+	while (fonts->next)
+	{
+		fonts = fonts->next;
+	}
+	ttf_TrueTypeFont *new = TrueTypeFont(filename);
+	fonts->next = new;
+}
+
 U0 EWMInit()
 { // Init window manager defaults.
 	wmgr = CAlloc(sizeof(EWindowManager));
@@ -573,6 +627,8 @@ U0 EWMInit()
 	wmgr->tasks = CAlloc(sizeof(ETask));
 	wmgr->windows = CAlloc(sizeof(EWindow));
 	wmgr->context_menus = CAlloc(sizeof(EContextMenu));
+	wmgr->desktop_items = CAlloc(sizeof(EDesktopItem));
+	wmgr->ttf_fonts = CAlloc(sizeof(ttf_TrueTypeFont));
 	wmgr->active = TRUE;
 	wmgr->ctx = NewContext2D(display.width, display.height, display.bpp);
 	wmgr->wallpaper = NewContext2D(display.width, display.height, display.bpp);
@@ -582,6 +638,19 @@ U0 EWMInit()
 	wmgr->utf16_clipboard = CAllocAligned(WMGR_UTF16_CLIPBOARD_SIZE, 16, Fs->code_heap);
 	//EWMSetMousePointer;
 	Fill2D(wmgr->wallpaper, BG_COL_DEFAULT);
+
+	// Load TrueType Fonts
+	CDirEntry *de = FilesFind("T:/System/Fonts/*.ttf");
+	if (de)
+	{
+		CDirEntry *de2 = de;
+		while (de2)
+		{
+			EWMLoadTTF(de2->full_name);
+			de2 = de2->next;
+		}
+	}
+	DirTreeDel(de);
 }
 
 EWMInit;
@@ -716,6 +785,52 @@ F64 EWMTaskCount()
 	return cnt;
 }
 
+EContext2D *icon_blkdev_default = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive.png");
+EContext2D *icon_blkdev_cdrom = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive_cd.png");
+EContext2D *icon_blkdev_isow = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive_burn.png");
+EContext2D *icon_blkdev_net = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive_network.png");
+
+U0 EWMEnumDesktopDevices()
+{
+
+	I64 x = 24;
+	I64 y = 32;
+	I64 i;
+	EDesktopItem *di = NULL;
+	for (i = 'A'; i < '['; i++)
+	{
+		if (Let2Drv(i,0))
+		{
+			di = CAlloc(sizeof(EDesktopItem));
+			di->x = x;
+			di->y = y;
+			switch (i)
+			{
+				case 'A'...'L':
+					di->ctx = icon_blkdev_default;
+					break;
+				case 'M'...'P':
+				case 'T'...'Z':
+					di->ctx = icon_blkdev_cdrom;
+					break;
+				case 'Q'...'S':
+					di->ctx = icon_blkdev_isow;
+					break;
+				default:
+					di->ctx = icon_blkdev_default;
+					break;
+
+			}
+			di->width = 32;
+			di->height = 32;
+			di->text = StrNew("!:/");
+			di->text[0] = i;
+			EWMAddDesktopItem(di);			
+			y += 52;
+		}
+	}
+}
+
 U0 EWMTask()
 { // Main Window Manager task.
 	Bool loadavg_sample = FALSE;
@@ -737,6 +852,9 @@ U0 EWMTask()
 	EWindow *cur_win;
 	EWidget *cur_wgt;
 	EContextMenu *cur_cmenu;
+	EDesktopItem *cur_ditem;
+	EDesktopItem *tmp_ditem;
+	I64 ditem_width=NULL;
 	EWindow *active_win=NULL;
 	EWindow *z_win;
 	I64 awin_title_xofs;
@@ -745,11 +863,13 @@ U0 EWMTask()
 	F64 avg;
 	I64 _avg;
 
+	EWMEnumDesktopDevices;
+
 	// Startup tasks:
 	EWMNewTask("T:/System/Programs/Tools/System Monitor.exec");
 
 	Spawn(&Netcfg,,,mp_cnt-1);
-	
+
 	while (1) //The ride never ends...
 	{
 		EWMSetMousePointer;
@@ -818,6 +938,17 @@ U0 EWMTask()
 
 		// Draw Wallpaper.
 		MemCpy(wmgr->ctx->fb, wmgr->wallpaper->fb, (display.width*display.height)*display.bpp/8);
+
+		// Draw Desktop Items.
+		tmp_ditem = wmgr->desktop_items->next;
+		while (tmp_ditem)
+		{
+			ditem_width = Bitmap16Print2D(null_context, 0, 0, BLACK, FONT_SMOL16, tmp_ditem->text);
+			Bitmap16Print2D(wmgr->ctx, tmp_ditem->x + (tmp_ditem->width/2) - (ditem_width/2),
+				tmp_ditem->y + tmp_ditem->height + 4, BLACK, FONT_SMOL16, tmp_ditem->text);
+			Blot2D(wmgr->ctx, tmp_ditem->x, tmp_ditem->y, tmp_ditem->ctx);				
+			tmp_ditem = tmp_ditem->next;
+		}
 
 		// If modal exists, set active window
 		z_win = wmgr->windows->next;

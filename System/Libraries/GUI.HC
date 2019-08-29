@@ -44,6 +44,21 @@ extern class ETask;
 extern U0 EWMCallback(U64 cmd, I64 id, ETask *task, U8 *path);
 extern U0 DrawContextMenuExpanded2D(EContext2D *ctx, EContextMenu *cmenu);
 
+class EDesktopItem
+{
+EDesktopItem *prev;
+EDesktopItem *next;
+EContext2D *ctx;
+U8 *text;
+U8 *path;
+I64 x;
+I64 y;
+I64 width;
+I64 height;
+I64 type;
+Bool selected;
+}
+
 class EContextMenuItem
 {
 EContextMenuItem *prev;
@@ -256,11 +271,13 @@ CTask *task;
 EWindow *windows;
 EWindow *active_win;
 EContextMenu *context_menus;
+EDesktopItem *desktop_items;
 EContext2D *ctx;
 EContext2D *wallpaper;
 EContext2D *pointer;
 I64 pointer_xofs;
 I64 pointer_yofs;
+ttf_TrueTypeFont *ttf_fonts;
 EContextMenu *context_menu;
 EWidget *context_wgt;
 I64 context_x;

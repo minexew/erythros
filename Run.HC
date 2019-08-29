@@ -15,10 +15,12 @@
 #include "System/Libraries/Display";
 #include "System/Libraries/Mouse";
 #include "System/Libraries/Graphics2D";
+#include "System/Libraries/TrueType";
 //#include "System/Libraries/JPEG";
 #include "System/Libraries/uPNG";
 #include "System/Libraries/MD5";
 #include "System/Libraries/GUI";
+
 #include "System/Libraries/User";
 #include "System/Libraries/Services";
 
