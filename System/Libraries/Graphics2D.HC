@@ -556,6 +556,111 @@ U0 SwapBGR(U8 *buf, I64 width, I64 height, I64 bpp)
 	}
 }
 
+EContext2D *FastBoxBlur2D(EContext2D *img, I64 radius)
+{
+	/*
+		Algorithm by Wojciech Jarosz, Implementation by Ferris Ateniese
+		http://elynxsdk.free.fr/ext-docs/Blur/Fast_box_blur.pdf
+		https://gist.github.com/LionRoar/12d625bee5882abb339dc7102ad6fe32#file-fastboxblur-cs
+	*/
+	I64 kSize = radius;
+	I64 c,i,j,x,y;
+	U32 tmpColor, tmp_nColor, tmp_pColor, plot_color;
+	F64 hSum[4];
+	F64 tSum[4];
+	F64 iAvg[4];
+
+	if (kSize % 2 == 0) kSize++;
+
+	EContext2D *Hblur = NewContext2D(img->width, img->height, display.bpp);
+	MemCpy(Hblur->fb, img->fb, (img->width*img->height)*display.bpp/8);
+
+	F64 Avg = 1.0 / kSize;
+
+	for (j = 0; j < img->height; j++) {
+		for (c=0; c<4; c++)
+		{
+			hSum[c] = 0.0;
+			iAvg[c] = 0.0;
+		}
+		for (x = 0; x < kSize; x++) {
+			tmpColor = Peek2D(img, x, j);
+			hSum[3] += tmpColor.u8[3];
+			hSum[2] += tmpColor.u8[2];
+			hSum[1] += tmpColor.u8[1];
+		}
+		iAvg[3] = hSum[3] * Avg;
+		iAvg[2] = hSum[2] * Avg;
+		iAvg[1] = hSum[1] * Avg;
+		for (i = 0; i < img->width; i++) {
+			if (i- kSize / 2 >= 0 && i + 1 + kSize / 2 < img->width) {
+				tmp_pColor = Peek2D(img, i- kSize / 2, j);
+				hSum[3] -= tmp_pColor.u8[3];
+				hSum[2] -= tmp_pColor.u8[2];
+				hSum[1] -= tmp_pColor.u8[1];
+				tmp_nColor = Peek2D(img, i + 1 + kSize / 2, j);
+				hSum[3] += tmp_nColor.u8[3];
+				hSum[2] += tmp_nColor.u8[2];
+				hSum[1] += tmp_nColor.u8[1];
+				//
+				iAvg[3] = hSum[3] * Avg;
+				iAvg[2] = hSum[2] * Avg;
+				iAvg[1] = hSum[1] * Avg;
+			}
+			plot_color.u8[3] = ToI64(iAvg[3]);
+			plot_color.u8[2] = ToI64(iAvg[2]);
+			plot_color.u8[1] = ToI64(iAvg[1]);
+			plot_color.u8[0] = 0;
+			Plot2D(Hblur, i, j, plot_color);
+
+		}
+	}
+
+	EContext2D *total = NewContext2D(Hblur->width, Hblur->height, display.bpp);
+	MemCpy(total->fb, Hblur->fb, (Hblur->width*Hblur->height)*display.bpp/8);
+
+	for (i = 0; i < Hblur->width; i++) {
+		for (c=0; c<4; c++)
+		{
+			tSum[c] = 0.0;
+			iAvg[c] = 0.0;
+		}
+		for (y = 0; y < kSize; y++) {
+			tmpColor = Peek2D(Hblur, i, y);
+			tSum[3] += tmpColor.u8[3];
+			tSum[2] += tmpColor.u8[2];
+			tSum[1] += tmpColor.u8[1];
+		}
+		iAvg[3] = tSum[3] * Avg;
+		iAvg[2] = tSum[2] * Avg;
+		iAvg[1] = tSum[1] * Avg;
+		for (j = 0; j < Hblur->height; j++) {
+			if (j- kSize / 2 >= 0 && j + 1 + kSize / 2 < Hblur->height) {
+				tmp_pColor = Peek2D(Hblur, i, j- kSize / 2);
+				tSum[3] -= tmp_pColor.u8[3];
+				tSum[2] -= tmp_pColor.u8[2];
+				tSum[1] -= tmp_pColor.u8[1];
+				tmp_nColor = Peek2D(Hblur, i, j + 1 + kSize / 2);
+
+				tSum[3] += tmp_nColor.u8[3];
+				tSum[2] += tmp_nColor.u8[2];
+				tSum[1] += tmp_nColor.u8[1];
+				//
+				iAvg[3] = tSum[3] * Avg;
+				iAvg[2] = tSum[2] * Avg;
+				iAvg[1] = tSum[1] * Avg;
+			}
+			plot_color.u8[3] = ToI64(iAvg[3]);
+			plot_color.u8[2] = ToI64(iAvg[2]);
+			plot_color.u8[1] = ToI64(iAvg[1]);
+			plot_color.u8[0] = 0;
+			Plot2D(total, i, j, plot_color);
+		}
+	}
+    DelContext2D(Hblur);
+	return total;
+}
+
 EContext2D *sys_fb = CAlloc(sizeof(EContext2D));
 
 U0 SysFrameBufferInit()
