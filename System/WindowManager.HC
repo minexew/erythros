@@ -4,15 +4,15 @@
 #define WMGR_WIN_MIN_WIDTH      180
 #define WMGR_WIN_MIN_Y              24
 
-EContext2D *tb_ctrl_power = LoadPNG("System/Media/Themes/Default/Icons/16/cog.png");
+EContext2D *tb_ctrl_power = LoadPNG("::/System/Media/Themes/Default/Icons/16/cog.png");
 
-EContext2D *tb_ctrl_sound_normal = LoadPNG("System/Media/Themes/Default/Icons/16/sound.png");
-EContext2D *tb_ctrl_sound_low = LoadPNG("System/Media/Themes/Default/Icons/16/sound_low.png");
-EContext2D *tb_ctrl_sound_none = LoadPNG("System/Media/Themes/Default/Icons/16/sound_none.png");
-EContext2D *tb_ctrl_sound_mute = LoadPNG("System/Media/Themes/Default/Icons/16/sound_mute.png");
+EContext2D *tb_ctrl_sound_normal = LoadPNG("::/System/Media/Themes/Default/Icons/16/sound.png");
+EContext2D *tb_ctrl_sound_low = LoadPNG("::/System/Media/Themes/Default/Icons/16/sound_low.png");
+EContext2D *tb_ctrl_sound_none = LoadPNG("::/System/Media/Themes/Default/Icons/16/sound_none.png");
+EContext2D *tb_ctrl_sound_mute = LoadPNG("::/System/Media/Themes/Default/Icons/16/sound_mute.png");
 EContext2D *tb_ctrl_sound = tb_ctrl_sound_normal;
 
-EContext2D *tb_ctrl_net = LoadPNG("System/Media/Themes/Default/Icons/16/network_ethernet.png");
+EContext2D *tb_ctrl_net = LoadPNG("::/System/Media/Themes/Default/Icons/16/network_ethernet.png");
 
 U0 EWMDelDesktopItem(EDesktopItem *item, Bool free_ctx=FALSE)
 {
@@ -640,7 +640,7 @@ U0 EWMInit()
 	Fill2D(wmgr->wallpaper, BG_COL_DEFAULT);
 
 	// Load TrueType Fonts
-	CDirEntry *de = FilesFind("T:/System/Fonts/*.ttf");
+	CDirEntry *de = FilesFind("::/System/Fonts/*.ttf");
 	if (de)
 	{
 		CDirEntry *de2 = de;
@@ -785,10 +785,10 @@ F64 EWMTaskCount()
 	return cnt;
 }
 
-EContext2D *icon_blkdev_default = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive.png");
-EContext2D *icon_blkdev_cdrom = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive_cd.png");
-EContext2D *icon_blkdev_isow = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive_burn.png");
-EContext2D *icon_blkdev_net = LoadPNG("T:/System/Media/Themes/Default/Icons/32/drive_network.png");
+EContext2D *icon_blkdev_default = LoadPNG("::/System/Media/Themes/Default/Icons/32/drive.png");
+EContext2D *icon_blkdev_cdrom = LoadPNG("::/System/Media/Themes/Default/Icons/32/drive_cd.png");
+EContext2D *icon_blkdev_isow = LoadPNG("::/System/Media/Themes/Default/Icons/32/drive_burn.png");
+EContext2D *icon_blkdev_net = LoadPNG("::/System/Media/Themes/Default/Icons/32/drive_network.png");
 
 U0 EWMEnumDesktopDevices()
 {
@@ -866,7 +866,7 @@ U0 EWMTask()
 	EWMEnumDesktopDevices;
 
 	// Startup tasks:
-	EWMNewTask("T:/System/Programs/Tools/System Monitor.exec");
+	EWMNewTask("::/System/Programs/Tools/System Monitor.exec");
 
 	Spawn(&Netcfg,,,mp_cnt-1);
 
@@ -1448,7 +1448,7 @@ U0 EWMTask()
 			add_menu[0]->y = task_menu->y+4+(i*24);
 			add_menu[0]->width = task_menu->width;
 			j=0;
-			tm_de[1]=FilesFind("T:/System/Programs");
+			tm_de[1]=FilesFind("::/System/Programs");
 			tm_de[0]=tm_de[1];
 			while (tm_de[0])
 			{
@@ -1464,7 +1464,7 @@ U0 EWMTask()
 					add_menu[1]->x = add_menu[0]->x+task_menu->width-2;
 					add_menu[1]->y = add_menu[0]->y+(j*24);
 					add_menu[1]->width = task_menu->width;
-					StrPrint(tm_de_str,"T:/System/Programs/%s", tm_de[0]->name);
+					StrPrint(tm_de_str,"::/System/Programs/%s", tm_de[0]->name);
 					k=1;
 					tm_de[3]=FilesFind(tm_de_str);
 					tm_de[2]=tm_de[3];

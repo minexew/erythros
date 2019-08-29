@@ -2,7 +2,7 @@
 U64 flags;
 ETask *my_task=EWMGetTask(Fs);
 my_task->title = "Constructor";
-my_task->icon = LoadPNG("/System/Media/Themes/Default/Icons/16/application_form.png");
+my_task->icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/application_form.png");
 
 EWMInitMenu(my_task, 3);
 

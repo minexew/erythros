@@ -110,7 +110,7 @@ U0 _LSPCI_PCILookUpDevs()
   CDoc *doc;
   if (dev.pci_head.next!=&dev.pci_head)
     return;
-  doc=DocRead("T:/System/Drivers/pci.ids",DOCF_PLAIN_TEXT|DOCF_NO_CURSOR);
+  doc=DocRead("::/System/Drivers/pci.ids",DOCF_PLAIN_TEXT|DOCF_NO_CURSOR);
   for (b=0;b<sys_pci_busses;b++)
     for (d=0;d<32;d++)
       for (f=0;f<8;f++) {
@@ -2234,7 +2234,7 @@ I64 CCMD_uptime(EConsole *con, I64 argc, U8 **argv)
     return 0;
 }
 
-#include "/System/Programs/Tools/Terminal.exec/ShellCommands/vi.HC";
+#include "::/System/Programs/Tools/Terminal.exec/ShellCommands/vi.HC";
 
 I64 CCMD_who(EConsole *con, I64 argc, U8 **argv)
 {

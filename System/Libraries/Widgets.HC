@@ -1,23 +1,23 @@
-EContext2D *wgt_button = LoadPNG("System/Media/Themes/Default/Widgets/button.png");
-EContext2D *wgt_button_a = LoadPNG("System/Media/Themes/Default/Widgets/button_active.png");
+EContext2D *wgt_button = LoadPNG("::/System/Media/Themes/Default/Widgets/button.png");
+EContext2D *wgt_button_a = LoadPNG("::/System/Media/Themes/Default/Widgets/button_active.png");
 
-EContext2D *wgt_checkbox = LoadPNG("System/Media/Themes/Default/Widgets/checkbox.png");
-EContext2D *wgt_checkbox_c = LoadPNG("System/Media/Themes/Default/Widgets/checkbox_checked.png");
-EContext2D *wgt_checkbox_active = LoadPNG("System/Media/Themes/Default/Widgets/checkbox_active.png");
-EContext2D *wgt_checkbox_c_active = LoadPNG("System/Media/Themes/Default/Widgets/checkbox_checked_active.png");
+EContext2D *wgt_checkbox = LoadPNG("::/System/Media/Themes/Default/Widgets/checkbox.png");
+EContext2D *wgt_checkbox_c = LoadPNG("::/System/Media/Themes/Default/Widgets/checkbox_checked.png");
+EContext2D *wgt_checkbox_active = LoadPNG("::/System/Media/Themes/Default/Widgets/checkbox_active.png");
+EContext2D *wgt_checkbox_c_active = LoadPNG("::/System/Media/Themes/Default/Widgets/checkbox_checked_active.png");
 
-EContext2D *wgt_radio = LoadPNG("System/Media/Themes/Default/Widgets/radio.png");
-EContext2D *wgt_radio_c = LoadPNG("System/Media/Themes/Default/Widgets/radio_checked.png");
-EContext2D *wgt_radio_active = LoadPNG("System/Media/Themes/Default/Widgets/radio_active.png");
+EContext2D *wgt_radio = LoadPNG("::/System/Media/Themes/Default/Widgets/radio.png");
+EContext2D *wgt_radio_c = LoadPNG("::/System/Media/Themes/Default/Widgets/radio_checked.png");
+EContext2D *wgt_radio_active = LoadPNG("::/System/Media/Themes/Default/Widgets/radio_active.png");
 
-EContext2D *wgt_combobox = LoadPNG("System/Media/Themes/Default/Widgets/combobox.png");
-EContext2D *wgt_combobox_a = LoadPNG("System/Media/Themes/Default/Widgets/combobox_active.png");
+EContext2D *wgt_combobox = LoadPNG("::/System/Media/Themes/Default/Widgets/combobox.png");
+EContext2D *wgt_combobox_a = LoadPNG("::/System/Media/Themes/Default/Widgets/combobox_active.png");
 
-EContext2D *wgt_hslider = LoadPNG("System/Media/Themes/Default/Widgets/horz_slider.png");
-EContext2D *wgt_vslider = LoadPNG("System/Media/Themes/Default/Widgets/horz_slider.png");
+EContext2D *wgt_hslider = LoadPNG("::/System/Media/Themes/Default/Widgets/horz_slider.png");
+EContext2D *wgt_vslider = LoadPNG("::/System/Media/Themes/Default/Widgets/horz_slider.png");
 
-EContext2D *fp_icon_folder = LoadPNG("System/Media/Themes/Default/Icons/16/folder.png");
-EContext2D *fp_icon_txt = LoadPNG("System/Media/Themes/Default/Icons/16/file_extension_txt.png");
+EContext2D *fp_icon_folder = LoadPNG("::/System/Media/Themes/Default/Icons/16/folder.png");
+EContext2D *fp_icon_txt = LoadPNG("::/System/Media/Themes/Default/Icons/16/file_extension_txt.png");
 
 U8 *ofs_dirsel=CAlloc(1024);
 

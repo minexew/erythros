@@ -5,7 +5,7 @@ I64 free_mem;
 U64 flags;
 ETask *my_task=EWMGetTask(Fs);
 my_task->title = "System Monitor";
-my_task->icon = LoadPNG("/System/Media/Themes/Default/Icons/16/system_monitor.png");
+my_task->icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/system_monitor.png");
 
 EWMInitMenu(my_task, 3);
 

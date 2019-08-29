@@ -364,26 +364,26 @@ extern U0 EWMTextClipCopy(EWidget *wgt);
 extern U0 EWMTextClipPaste(EWidget *wgt);
 extern U0 EWMTextClipCut(EWidget *wgt);
 
-EContext2D *ms_cur_default = LoadPNG("System/Media/Themes/Default/Cursors/Pointer.png");
-EContext2D *ms_cur_input = LoadPNG("System/Media/Themes/Default/Cursors/Input.png");
+EContext2D *ms_cur_default = LoadPNG("::/System/Media/Themes/Default/Cursors/Pointer.png");
+EContext2D *ms_cur_input = LoadPNG("::/System/Media/Themes/Default/Cursors/Input.png");
 
 EContext2D *ms_cur_wait[8];
-ms_cur_wait[0] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_01.png");
-ms_cur_wait[1] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_02.png");
-ms_cur_wait[2] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_03.png");
-ms_cur_wait[3] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_04.png");
-ms_cur_wait[4] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_05.png");
-ms_cur_wait[5] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_06.png");
-ms_cur_wait[6] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_07.png");
-ms_cur_wait[7] = LoadPNG("System/Media/Themes/Default/Cursors/Wait_08.png");
+ms_cur_wait[0] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_01.png");
+ms_cur_wait[1] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_02.png");
+ms_cur_wait[2] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_03.png");
+ms_cur_wait[3] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_04.png");
+ms_cur_wait[4] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_05.png");
+ms_cur_wait[5] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_06.png");
+ms_cur_wait[6] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_07.png");
+ms_cur_wait[7] = LoadPNG("::/System/Media/Themes/Default/Cursors/Wait_08.png");
 
-EContext2D *default_icon = LoadPNG("System/Media/Themes/Default/Icons/16/application_form.png");
-EContext2D *desktop_icon = LoadPNG("System/Media/Themes/Default/Icons/16/desktop.png");
-EContext2D *programs_icon = LoadPNG("System/Media/Themes/Default/Icons/16/application_double.png");
-EContext2D *terminal_icon = LoadPNG("System/Media/Themes/Default/Icons/16/terminal_emulator.png");
+EContext2D *default_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/application_form.png");
+EContext2D *desktop_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/desktop.png");
+EContext2D *programs_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/application_double.png");
+EContext2D *terminal_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/terminal_emulator.png");
 
-EContext2D *cmenu_arrow_icon = LoadPNG("System/Media/Themes/Default/Icons/16/bullet_arrow_right.png");
-EContext2D *left_arrow_icon = LoadPNG("System/Media/Themes/Default/Icons/16/bullet_arrow_left.png");
+EContext2D *cmenu_arrow_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/bullet_arrow_right.png");
+EContext2D *left_arrow_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/bullet_arrow_left.png");
 EContext2D *right_arrow_icon = cmenu_arrow_icon;
 
 EContext2D *window_btn = NewContext2D(16, 16, display.bpp);
@@ -393,7 +393,7 @@ SwapBGR(window_btn_data, 16, 16, display.bpp);
 MemCpy(window_btn->fb, window_btn_data, (16*16)*display.bpp/8);
 Free(window_btn_data);
 
-#include "System/Libraries/Widgets";
+#include "::/System/Libraries/Widgets";
 
 U0 EWMCenterWidget(EWidget *wgt, EWindow *win, Bool horz = TRUE, Bool vert = TRUE)
 {
