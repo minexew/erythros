@@ -643,10 +643,10 @@ U0 DrawWindow2D(EContext2D *ctx, EWindow *win)
 		if (wgt->visible)
 		{
 			DrawWidget2D(win->ctx, win, wgt);
-			Blot2D(wmgr->ctx, win->x, win->y, win->ctx);
 		}
 		wgt = wgt->next;
 	}
+	Blot2D(wmgr->ctx, win->x, win->y, win->ctx);
 
 	if (win->has_icon)
 	{ // Draw icon
