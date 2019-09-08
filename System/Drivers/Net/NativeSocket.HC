@@ -293,8 +293,9 @@ I64 create_connection(U8* hostname, U16 port) {
   return -1;
 }
 
-I64 GetAddressForHost(U8 *str, U32 *addr)
+I64 GetAddressForHost(U8 *_str, U32 *addr)
 {
+    U8 *str = StrNew(_str);
     *addr = NULL;
     I64 err = NULL;
     addrinfo* res = NULL;
@@ -309,8 +310,10 @@ I64 GetAddressForHost(U8 *str, U32 *addr)
         {
           freeaddrinfo(res);
         }
+        Free(str);
         return err;
     }
+    Free(str);
     return 0;
 }
 

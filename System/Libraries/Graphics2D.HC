@@ -173,6 +173,64 @@ U0 Blot2D(EContext2D *dst, I64 x, I64 y, EContext2D *src)
 	}
 }
 
+U0 BlotBounds2D(EContext2D *dst, I64 x, I64 y, I64 x1, I64 y1, I64 x2, I64 y2, EContext2D *src)
+{//Blot2D with bounds
+	if (src==NULL || dst==NULL)
+	{
+		return;
+	}
+	U8 *chk_alpha_ptr;
+	U32 chk_alpha;
+	U64 i=dst->fb;
+	U64 j=src->fb;
+	I64 xx,yy;
+	I64 dx,sx;
+	i+=(x*dst->bpp/8)+((dst->width*y)*dst->bpp/8);
+	for (yy=0; yy<src->height; yy++)
+	{
+		dx=0;
+		sx=0;
+		for (xx=0; xx<src->width; xx++)
+		{
+			chk_alpha_ptr=j+dx+((src->width*yy)*src->bpp/8);
+			chk_alpha=0;
+			chk_alpha.u8[1]=chk_alpha_ptr[0];
+			chk_alpha.u8[2]=chk_alpha_ptr[1];
+			chk_alpha.u8[3]=chk_alpha_ptr[2];
+
+			if ((chk_alpha!=src->alpha_color || src->alpha_color==-1) &&
+			    x+xx>-1 && y+yy>-1 &&
+			    x+xx<dst->width && y+yy<dst->height &&
+				x+xx>x1 && x+xx<x2 && y+yy>y1 && y+yy<y2)
+			{
+				MemCpy(i+sx+((dst->width*yy)*dst->bpp/8), j+dx+((src->width*yy)*src->bpp/8), 3);
+			}
+			switch (dst->bpp)
+			{
+			case 32:
+				dx+=4;
+				break;
+			case 24:
+				dx+=3;
+				break;
+			default:
+				break;
+			}
+			switch (src->bpp)
+			{
+			case 32:
+				sx+=4;
+				break;
+			case 24:
+				sx+=3;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
 U0 CopyRect2D(EContext2D *ctx, I64 x, I64 y, EContext2D *rect)
 {//Copy rect with clipping.
 
@@ -236,12 +294,34 @@ I64 Bitmap16Print2D(EContext2D *ctx, I64 x, I64 y, U32 color=0, U16 *chr=FONT_WI
 		buf=StrNew(fmt);
 	}
 	U8 *str=buf;
+	I64 orig_x = x;
 	I64 xx,yy;
 	I64 space;
 	U16 *pos;
 	while (*str)
 	{
 		skip=FALSE;
+
+		switch (str[0])
+		{
+			case '\n':
+				x = orig_x;
+				switch (chr)
+				{
+					case FONT_SMOL16:
+						x -= space + 1;
+						break;
+					default:
+						x -= space + 2;
+						break;
+				}
+				y += 12;
+				goto ignore_char;
+				break;
+			default:
+				break;
+		}
+
 		if (*str==' ')
 		{
 			skip=TRUE;
@@ -268,6 +348,7 @@ I64 Bitmap16Print2D(EContext2D *ctx, I64 x, I64 y, U32 color=0, U16 *chr=FONT_WI
 		{
 			space=4;
 		}
+ignore_char:		
 		str++;
 		if (*str)
 		{

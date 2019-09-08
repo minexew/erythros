@@ -1114,8 +1114,19 @@ U0 DrawContext2D(EContext2D *ctx, EWindow *win, EWidget *wgt)
 			}
 		}
 	}
+	if (wgt->has_alpha)
+	{
+		if (wgt->bounds_wgt)
+		{
+			BlotBounds2D(ctx, wgt->x, wgt->y,
+				wgt->bounds_wgt->x, wgt->bounds_wgt->y,
+				wgt->bounds_wgt->x+wgt->bounds_wgt->width, wgt->bounds_wgt->y+wgt->bounds_wgt->height, wgt->ctx);	
+			return;
+		}
+		Blot2D(ctx, wgt->x, wgt->y, wgt->ctx);
+		return;
+	}
 	CopyRect2D(ctx, wgt->x, wgt->y, wgt->ctx);
-	//Blot2D(ctx, wgt->x, wgt->y, wgt->ctx);
 }
 
 U0 DrawLabel2D(EContext2D *ctx, EWindow *win, EWidget *wgt)

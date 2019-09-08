@@ -247,6 +247,22 @@ U0 EWMAddWidget(EWindow *win, EWidget *wgt)
 	wgt->prev=tmp;
 }
 
+U0 EWMInsertWidgetAfter(EWidget *cur_wgt, EWidget *new_wgt)
+{ // Insert widget after node in linked list.
+	new_wgt->prev = cur_wgt;
+	new_wgt->next = cur_wgt->next;
+	cur_wgt->next = new_wgt;
+}
+
+U0 EWMInsertWidgetBefore(EWidget *cur_wgt, EWidget *new_wgt)
+{ // Insert widget before node in linked list.
+	EWidget *prev_wgt = cur_wgt->prev;
+	prev_wgt->next = new_wgt;
+	cur_wgt->prev = new_wgt;
+	new_wgt->prev = prev_wgt;
+	new_wgt->next = cur_wgt;
+}
+
 U0 EWMUpdateOFSDirTree(EWindow *win, U8 *str)
 {
 	I64 i;
@@ -505,6 +521,10 @@ U0 EWMSetMousePointer(I64 cur=ms_cur_default)
 	wmgr->pointer = cur;
 	switch (cur)
 	{
+		case ms_cur_hand:
+			wmgr->pointer_xofs = -4;
+			wmgr->pointer_yofs = 0;
+			break;
 		case ms_cur_input:
 			wmgr->pointer_xofs = 0;
 			wmgr->pointer_yofs = -6;
@@ -1076,10 +1096,27 @@ U0 EWMTask()
 				        (mouse.y > active_win->y+cur_wgt->y && mouse.y < active_win->y+cur_wgt->y+cur_wgt->height)
 				        )
 				{
-					cur_wgt->hover = TRUE;
-					if (cur_wgt->pointer)
+					if (cur_wgt->bounds_wgt)
 					{
-						EWMSetMousePointer(cur_wgt->pointer);
+						if (
+				        		(mouse.x > active_win->x+cur_wgt->bounds_wgt->x && mouse.x < active_win->x+cur_wgt->bounds_wgt->x+cur_wgt->bounds_wgt->width) &&
+				        		(mouse.y > active_win->y+cur_wgt->bounds_wgt->y && mouse.y < active_win->y+cur_wgt->bounds_wgt->y+cur_wgt->bounds_wgt->height)
+				        		)
+						{
+							cur_wgt->hover = TRUE;
+							if (cur_wgt->pointer)
+							{
+								EWMSetMousePointer(cur_wgt->pointer);
+							}
+						}
+					}
+					else
+					{
+						cur_wgt->hover = TRUE;
+						if (cur_wgt->pointer)
+						{
+							EWMSetMousePointer(cur_wgt->pointer);
+						}
 					}
 					break;
 				}
@@ -1113,6 +1150,22 @@ U0 EWMTask()
 		{
 			active_win->width = wmgr->orig_win_xw + (mouse.x - wmgr->orig_ms_x);
 			active_win->height = wmgr->orig_win_yh + (mouse.y - wmgr->orig_ms_y);
+			if (active_win->min_width>0)
+			{
+				active_win->width = Max(active_win->width, active_win->min_width);
+			}
+			if (active_win->min_height>0)
+			{
+				active_win->height = Max(active_win->height, active_win->min_height);
+			}
+			if (active_win->max_width>0)
+			{
+				active_win->width = Min(active_win->width, active_win->max_width);
+			}
+			if (active_win->max_height>0)
+			{
+				active_win->height = Min(active_win->height, active_win->max_height);
+			}
 		}
 
 		// Handle dragging

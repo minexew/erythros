@@ -845,6 +845,83 @@ I64 ttf_FindX2(CDC *dc)
   return -1; 
 }
 
+I64 ttf_CtxFindX1(EContext2D *ctx)
+{
+  I64 x=0;
+  I64 y=0;
+  while (x<ctx->width)
+  {
+    y=0;
+    while (y<ctx->height)
+    {
+      if (Peek2D(ctx,x,y)!=ctx->alpha_color)
+      {
+        return x;
+      }
+      y++;
+    }
+    x++;
+  }
+  return -1; 
+}
+I64 ttf_CtxFindX2(EContext2D *ctx)
+{
+  I64 x=ctx->width-1;
+  I64 y=ctx->height-1;
+  while (x>-1)
+  {
+    y=ctx->height-1;
+    while (y>-1)
+    {
+      if (Peek2D(ctx,x,y)!=ctx->alpha_color)
+      {
+        return x;
+      }
+      y--;
+    }
+    x--;
+  }
+  return -1; 
+}
+I64 ttf_CtxFindY1(EContext2D *ctx)
+{
+  I64 x=0;
+  I64 y=0;
+  while (y<ctx->height)
+  {
+    x=0;
+    while (x<ctx->width)
+    {
+      if (Peek2D(ctx,x,y)!=ctx->alpha_color)
+      {
+        return y;
+      }
+      x++;
+    }
+    y++;
+  }
+  return -1; 
+}
+I64 ttf_CtxFindY2(EContext2D *ctx)
+{
+  I64 x=ctx->width-1;
+  I64 y=ctx->height-1;
+  while (y>-1)
+  {
+    x=ctx->width-1;
+    while (x>-1)
+    {
+      if (Peek2D(ctx,x,y)!=ctx->alpha_color)
+      {
+        return y;
+      }
+      x--;
+    }
+    y--;
+  }
+  return -1; 
+}
+
 U0 ttf_RenderGlyph(ttf_Glyph *g)
 {
     I64 xofs = 128;
@@ -853,7 +930,7 @@ U0 ttf_RenderGlyph(ttf_Glyph *g)
     F64 xx=0, yy=0;
     F64 fx=0, fy=0;
 
-    I64 scale = 10;
+    I64 scale = 5;
     if (!g->Points) { return; };
 
     Bool first = TRUE;
@@ -954,8 +1031,10 @@ I64 ttf_DrawGlyph(EContext2D *ctx, I64 x, I64 y, F64 size, U32 color, ttf_Glyph 
     return width;
 }
 
-U0 ttf_RenderText2D(EContext2D *ctx, I64 x, I64 y, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *ttf, U8 *ttf_name, U8 *text, U32 color=0x0)
+I64 ttf_RenderText2D(EContext2D *ctx, I64 x, I64 y, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *ttf, U8 *ttf_name, U8 *text, U32 color=0x0)
 {
+    I64 ox = x;
+    I64 oy = y;
     while (ttf)
     {
         if (!StrCmp(ttf->_filename, ttf_name))
@@ -973,12 +1052,51 @@ U0 ttf_RenderText2D(EContext2D *ctx, I64 x, I64 y, F64 size=0.5, I64 space=2, tt
         {
             g = ttf_ReadGlyph(ttf, 't');
             width = ttf_DrawGlyph(ctx, x, y, size, color, g, FALSE);
+            x += width + space;
         }
+        /*
+        else if (text[i]=='\n')
+        {
+            x = ox;
+            y += 22;
+        }
+        */
         else
         {
             g = ttf_ReadGlyph(ttf, text[i]);
             width = ttf_DrawGlyph(ctx, x, y, size, color, g);
+            x += width + space;
         }
-        x += width + space;
     }
+    return (x-ox) - space;
+}
+
+EContext2D *ttf_TextRect2D(I64 w, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *ttf, U8 *ttf_name, U8 *text, U32 color=0x0)
+{
+    I64 x_offset = 0;
+    I64 y_offset = 0;
+    I64 x1, y1, x2, y2;
+
+    EContext2D *ctx = NewContext2D(w, 256, display.bpp);
+    EContext2D *rect = NULL;
+    ctx->alpha_color=0x00FF0000;
+
+    Fill2D(ctx, ctx->alpha_color);
+    ttf_RenderText2D(ctx, x_offset, y_offset, size, space, ttf, ttf_name, "Iy", color);
+    y1 = ttf_CtxFindY1(ctx) - 4;
+    y2 = ttf_CtxFindY2(ctx) + 4;
+
+    //DocPrint(trace_log, "y1: %d, y2: %d\n", y1, y2);
+
+    Fill2D(ctx, ctx->alpha_color);
+    ttf_RenderText2D(ctx, x_offset, y_offset, size, space, ttf, ttf_name, text, color);
+    x1 = ttf_CtxFindX1(ctx);
+    x2 = ttf_CtxFindX2(ctx);
+
+    rect = NewContext2D(x2-x1, y2-y1, display.bpp);
+    rect->alpha_color=0x00FF0000;
+    Fill2D(rect, rect->alpha_color);
+    Blot2D(rect, -x1, -y1, ctx);
+    DelContext2D(ctx);
+    return rect;
 }

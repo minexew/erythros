@@ -140,6 +140,8 @@ I64 orig_wgt_xw;
 I64 orig_wgt_yh;
 Bool scroll_horz;
 Bool scroll_vert;
+Bool has_alpha;
+EWidget *bounds_wgt;
 I64 width;
 I64 height;
 I64 bg_color;
@@ -161,6 +163,7 @@ Bool refresh;
 Bool redraw;
 I64 sel_index;
 U8 *text;
+U8 *caption;
 I64 text_pos;
 I64 text_maxlen;
 I64 text_width;
@@ -365,6 +368,7 @@ extern U0 EWMTextClipPaste(EWidget *wgt);
 extern U0 EWMTextClipCut(EWidget *wgt);
 
 EContext2D *ms_cur_default = LoadPNG("::/System/Media/Themes/Default/Cursors/Pointer.png");
+EContext2D *ms_cur_hand = LoadPNG("::/System/Media/Themes/Default/Cursors/Hand.png");
 EContext2D *ms_cur_input = LoadPNG("::/System/Media/Themes/Default/Cursors/Input.png");
 
 EContext2D *ms_cur_wait[8];
