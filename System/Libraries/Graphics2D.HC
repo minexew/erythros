@@ -272,12 +272,67 @@ U0 CopyRect2D(EContext2D *ctx, I64 x, I64 y, EContext2D *rect)
   }
 }
 
+EContext2D *Rotate2D(EContext2D *src, I64 deg)
+{ //Simple rect rotate.
+	I64 i, iter = 0;
+	I64 sx, sy, dx, dy;
+	U32 color;
+	switch (deg)
+	{
+		case 90:
+			iter = 1;
+			break;
+		case 180:
+			iter = 2;
+			break;
+		case -90:
+		case 270:
+			iter = 3;
+			break;
+		default:
+			return NULL;
+			break;
+	}
+	EContext2D *c_src = NewContext2D(src->width, src->height, display.bpp);
+	EContext2D *dst = NewContext2D(src->width, src->height, display.bpp);
+	c_src->alpha_color = src->alpha_color;
+	dst->alpha_color = src->alpha_color;
+	CopyRect2D(c_src, 0, 0, src);
+	dx = 0;
+	for (i = 0; i < iter; i++)
+	{
+		for (sy = 0; sy < c_src->height; sy++)
+		{
+			dy = 0;
+			for (sx = 0; sx < c_src->width; sx++)
+			{
+				color = Peek2D(c_src, sx, sy);
+				Plot2D(dst, dx, dy, color);
+				dy++;
+			}
+			dx++;
+		}
+		CopyRect2D(c_src, 0, 0, dst);
+	}
+	DelContext2D(c_src);
+	return dst;
+}
+
 U0 Rect2D(EContext2D *ctx, I64 x, I64 y, I64 w, I64 h, U32 color)
 { //Draw a rectangle fill.
-	EContext2D *tmpctx=NewContext2D(w, h, display.bpp);
+	EContext2D *tmpctx=NewContext2D(Max(4, w), Max(4, h), display.bpp);
 	Fill2D(tmpctx, color);
 	//Blot2D(ctx, x, y, tmpctx);
 	CopyRect2D(ctx, x, y, tmpctx);
+	DelContext2D(tmpctx);
+}
+
+U0 BlotRect2D(EContext2D *ctx, I64 x, I64 y, I64 w, I64 h, U32 color)
+{ //Draw a rectangle fill, using Blot2D method.
+	EContext2D *tmpctx=NewContext2D(Max(4, w), Max(4, h), display.bpp);
+	Fill2D(tmpctx, color);
+	Blot2D(ctx, x, y, tmpctx);
+	//CopyRect2D(ctx, x, y, tmpctx);
 	DelContext2D(tmpctx);
 }
 

@@ -1000,17 +1000,27 @@ U0 ttf_RenderGlyph(ttf_Glyph *g)
 I64 ttf_DrawGlyph(EContext2D *ctx, I64 x, I64 y, F64 size, U32 color, ttf_Glyph *g, Bool draw=TRUE)
 {
     I64 cx, cy, oy, width;
+    F64 fx, fy;
+    I64 dx, dy;
     if (!g->dc)
     {
         ttf_RenderGlyph(g);
+        if (!draw) return NULL;
     }
     CDC *tmpdc = DCNew(g->dc->width, g->dc->height);
     DCFill(tmpdc);
-    CSprite *s=DC2Sprite(g->dc);
-    Mat4x4IdentEqu(tmpdc->r);
-    Mat4x4Scale(tmpdc->r, size);
-    Sprite3Mat4x4B(tmpdc,0,0,0,s,tmpdc->r);
-    Free(s);
+    dy=0;
+    for (fy=0;fy<g->dc->height;fy+=size)
+    {
+        dx=0;
+        for (fx=0;fx<g->dc->width;fx+=size)
+        {
+            tmpdc->color = GrPeek(g->dc,ToI64(fx),ToI64(fy));
+            GrPlot(tmpdc,dx,dy);
+            dx++;
+        }
+        dy++;
+    }
     if (draw)
     {
         oy = 0;
@@ -1031,7 +1041,7 @@ I64 ttf_DrawGlyph(EContext2D *ctx, I64 x, I64 y, F64 size, U32 color, ttf_Glyph 
     return width;
 }
 
-I64 ttf_RenderText2D(EContext2D *ctx, I64 x, I64 y, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *ttf, U8 *ttf_name, U8 *text, U32 color=0x0)
+I64 ttf_RenderText2D(EContext2D *ctx, I64 x, I64 y, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *ttf, U8 *ttf_name, U8 *text, U32 color=0x0, Bool draw=TRUE)
 {
     I64 ox = x;
     I64 oy = y;
@@ -1054,17 +1064,10 @@ I64 ttf_RenderText2D(EContext2D *ctx, I64 x, I64 y, F64 size=0.5, I64 space=2, t
             width = ttf_DrawGlyph(ctx, x, y, size, color, g, FALSE);
             x += width + space;
         }
-        /*
-        else if (text[i]=='\n')
-        {
-            x = ox;
-            y += 22;
-        }
-        */
         else
         {
             g = ttf_ReadGlyph(ttf, text[i]);
-            width = ttf_DrawGlyph(ctx, x, y, size, color, g);
+            width = ttf_DrawGlyph(ctx, x, y, size, color, g, draw);
             x += width + space;
         }
     }
@@ -1079,7 +1082,7 @@ EContext2D *ttf_TextRect2D(I64 w, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *t
 
     EContext2D *ctx = NewContext2D(w, 256, display.bpp);
     EContext2D *rect = NULL;
-    ctx->alpha_color=0x00FF0000;
+    ctx->alpha_color=0xFFFFFF00 - color;
 
     Fill2D(ctx, ctx->alpha_color);
     ttf_RenderText2D(ctx, x_offset, y_offset, size, space, ttf, ttf_name, "Iy", color);
@@ -1094,7 +1097,7 @@ EContext2D *ttf_TextRect2D(I64 w, F64 size=0.5, I64 space=2, ttf_TrueTypeFont *t
     x2 = ttf_CtxFindX2(ctx);
 
     rect = NewContext2D(x2-x1, y2-y1, display.bpp);
-    rect->alpha_color=0x00FF0000;
+    rect->alpha_color=0xFFFFFF00 - color;
     Fill2D(rect, rect->alpha_color);
     Blot2D(rect, -x1, -y1, ctx);
     DelContext2D(ctx);

@@ -1108,6 +1108,7 @@ U0 EWMTask()
 							{
 								EWMSetMousePointer(cur_wgt->pointer);
 							}
+							break;
 						}
 					}
 					else
@@ -1117,8 +1118,8 @@ U0 EWMTask()
 						{
 							EWMSetMousePointer(cur_wgt->pointer);
 						}
+						break;
 					}
-					break;
 				}
 				cur_wgt = cur_wgt->prev;
 			}

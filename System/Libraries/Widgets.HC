@@ -691,8 +691,6 @@ U0 DrawHScrollBar2D(EContext2D *ctx, EWindow *win, EWidget *wgt)
 		)
 	{
 		wgt->clicked=TRUE;
-		//wgt->orig_wgt_xw = wgt->x;
-		//wgt->orig_wgt_yh = wgt->y;
 		wgt->orig_wgt_xw = wgt->x_scroll;
 		wgt->orig_ms_x = mouse.x;
 		wgt->orig_ms_y = mouse.y;
@@ -735,94 +733,127 @@ U0 DrawHScrollBar2D(EContext2D *ctx, EWindow *win, EWidget *wgt)
 	wgt->parent_wgt->x_scroll=wgt->x_scroll;
 	wgt->parent_wgt->redraw=TRUE;
 
-	Rect2D(ctx, wgt->x, wgt->y, wgt->width, wgt->height, theme.medium_dark);
+	// Draw left scroll button
+	BlotRect2D(ctx, wgt->x, wgt->y+1, 16, 15, 0xE8E8E800);
+	Blot2D(ctx, wgt->x-1, wgt->y, left_arrow_icon);
+	VLine2D(ctx, wgt->x, wgt->y+1, wgt->y+14, theme.light);
+	HLine2D(ctx, wgt->x, wgt->y+1, wgt->x+16, theme.light);
+	VLine2D(ctx, wgt->x+16, wgt->y+1, wgt->y+15, theme.dark);
+	HLine2D(ctx, wgt->x, wgt->y+15, wgt->x+16, theme.dark);
 
-		//if (win->click_close)
-		if (2==3)
-		{
-			Blot2D(ctx, wgt->x+win->width-21, win->y+5, window_btn);
-			Blot2D(ctx, win->x+win->width-21, win->y+6, window_btn);
-			if (wmgr->active_win!=win || wmgr->win_blurall)
-			{
-				Bitmap16Print2D(ctx, win->x+win->width-16, win->y+6, theme.blur_title_fg, FONT_WINTITLE16, "x");
-			}
-			else
-			{
-				Bitmap16Print2D(ctx, win->x+win->width-15, win->y+7, theme.dark, FONT_WINTITLE16, "x");
-				Bitmap16Print2D(ctx, win->x+win->width-16, win->y+6, theme.focus_title_fg, FONT_WINTITLE16, "x");
-			}
-			HLine2D(ctx, win->x+win->width-22, win->y+4, win->x+win->width-5, theme.dark);
-			VLine2D(ctx, win->x+win->width-22, win->y+4, win->y+20, theme.dark);
-			HLine2D(ctx, win->x+win->width-22, win->y+21, win->x+win->width-5, theme.light);
-			VLine2D(ctx, win->x+win->width-4, win->y+4, win->y+21, theme.light);
-		}
-		else
-		{
+	// Draw scrollbar
+	BlotRect2D(ctx, bar_pos+wgt->x+16, wgt->y+1, bar_width, 15, 0xE8E8E800);				
+	VLine2D(ctx, bar_pos+wgt->x+16, wgt->y+1, wgt->y+15, theme.medium_dark);
+	VLine2D(ctx, bar_pos+wgt->x+17, wgt->y+1, wgt->y+14, theme.light);
+	HLine2D(ctx, bar_pos+wgt->x+17, wgt->y+1, bar_pos+wgt->x+17+bar_width-3, theme.light);
+	VLine2D(ctx, bar_pos+wgt->x+17+bar_width-2, wgt->y+1, wgt->y+15, theme.dark);
+	HLine2D(ctx, bar_pos+wgt->x+17, wgt->y+15, bar_pos+wgt->x+17+bar_width-3, theme.dark);
 
-			//Blot2D(ctx, wgt->x, wgt->y, window_btn);
-
-			// Draw left scroll button
-
-			Rect2D(ctx, wgt->x, wgt->y+1, 16, 15, 0xE8E8E800);
-			Blot2D(ctx, wgt->x-1, wgt->y, left_arrow_icon);
-			VLine2D(ctx, wgt->x, wgt->y+1, wgt->y+14, theme.light);
-			HLine2D(ctx, wgt->x, wgt->y+1, wgt->x+16, theme.light);
-			VLine2D(ctx, wgt->x+16, wgt->y+1, wgt->y+15, theme.dark);
-			HLine2D(ctx, wgt->x, wgt->y+15, wgt->x+16, theme.dark);
-
-			// Draw scrollbar
-
-			Rect2D(ctx, bar_pos+wgt->x+16, wgt->y+1, bar_width, 15, 0xE8E8E800);
-			VLine2D(ctx, bar_pos+wgt->x+16, wgt->y+1, wgt->y+15, theme.medium_dark);
-			VLine2D(ctx, bar_pos+wgt->x+17, wgt->y+1, wgt->y+14, theme.light);
-			HLine2D(ctx, bar_pos+wgt->x+17, wgt->y+1, bar_pos+wgt->x+17+bar_width-3, theme.light);
-			VLine2D(ctx, bar_pos+wgt->x+17+bar_width-2, wgt->y+1, wgt->y+15, theme.dark);
-			HLine2D(ctx, bar_pos+wgt->x+17, wgt->y+15, bar_pos+wgt->x+17+bar_width-3, theme.dark);
-
-			// Draw right scroll button
-
-			Rect2D(ctx, wgt->x+wgt->width-17, wgt->y+1, 16, 15, 0xE8E8E800);
-			Blot2D(ctx, wgt->x+wgt->width-17, wgt->y, right_arrow_icon);
-			VLine2D(ctx, wgt->x+wgt->width-17, wgt->y+1, wgt->y+14, theme.light);
-			HLine2D(ctx, wgt->x+wgt->width-17, wgt->y+1, wgt->x+16+wgt->width-17, theme.light);
-			VLine2D(ctx, wgt->x+16+wgt->width-17, wgt->y+1, wgt->y+15, theme.dark);
-			HLine2D(ctx, wgt->x+wgt->width-17, wgt->y+15, wgt->x+16+wgt->width-17, theme.dark);
-
-
-			//Blot2D(ctx, wgt->x+wgt->width-16, wgt->y, window_btn);
-
-
-			/*
-			if (wmgr->active_win!=win || wmgr->win_blurall)
-			{
-				Bitmap16Print2D(ctx, win->x+win->width-17, win->y+5, theme.blur_title_fg, FONT_WINTITLE16, "x");
-			}
-			else
-			{
-				*/
-				//Blot2D(ctx, wgt->x-1+4, wgt->y+2, )
-				//Bitmap16Print2D(ctx, wgt->x-1+4, wgt->y+2, theme.dark, FONT_WINTITLE16, "<");
-				//Bitmap16Print2D(ctx, wgt->x+4, wgt->y+1, theme.focus_title_fg, FONT_WINTITLE16, "<");
-
-				//Bitmap16Print2D(ctx, wgt->x-1-4+wgt->width-8, wgt->y+2, theme.dark, FONT_WINTITLE16, ">");
-				//Bitmap16Print2D(ctx, wgt->x-4+wgt->width-8, wgt->y+1, theme.focus_title_fg, FONT_WINTITLE16, ">");
-
-
-			//}
-			/*
-			HLine2D(ctx, win->x+win->width-23, win->y+4, win->x+win->width-6, theme.light);
-			VLine2D(ctx, win->x+win->width-23, win->y+4, win->y+20, theme.light);
-			HLine2D(ctx, win->x+win->width-23, win->y+21, win->x+win->width-6, theme.dark);
-			VLine2D(ctx, win->x+win->width-5, win->y+4, win->y+21, theme.dark);
-			*/
-		}
-
-
-
+	// Draw right scroll button
+	BlotRect2D(ctx, wgt->x+wgt->width-17, wgt->y+1, 16, 15, 0xE8E8E800);
+	Blot2D(ctx, wgt->x+wgt->width-17, wgt->y, right_arrow_icon);
+	VLine2D(ctx, wgt->x+wgt->width-17, wgt->y+1, wgt->y+14, theme.light);
+	HLine2D(ctx, wgt->x+wgt->width-17, wgt->y+1, wgt->x+16+wgt->width-17, theme.light);
+	VLine2D(ctx, wgt->x+16+wgt->width-17, wgt->y+1, wgt->y+15, theme.dark);
+	HLine2D(ctx, wgt->x+wgt->width-17, wgt->y+15, wgt->x+16+wgt->width-17, theme.dark);
+		
 }
 
 U0 DrawVScrollBar2D(EContext2D *ctx, EWindow *win, EWidget *wgt)
 {
+
+	if (!wgt->parent_wgt)
+	{
+		return;
+	}
+	wgt->x=wgt->parent_wgt->x+1;
+	wgt->y=wgt->parent_wgt->y-16;
+	wgt->height=wgt->parent_wgt->height-1;
+	wgt->width=16;
+
+	I64 bar_height=wgt->height-32 - (wgt->parent_wgt->y_scroll_max-wgt->parent_wgt->height);
+	I64 bar_pos=wgt->y_scroll;
+
+	
+
+	if (wgt->clicked && mouse.y != wgt->orig_ms_y)
+	{
+		wgt->y_scroll = wgt->orig_wgt_yh+ (mouse.y-wgt->orig_ms_y);
+	}
+
+
+	if (mouse.lb && !wmgr->prev_lb && wgt->hover && !wgt->clicked &&
+		(mouse.y>win->y+wgt->y+16+bar_pos && mouse.y<win->y+wgt->y+16+bar_pos+bar_height && mouse.x>win->x+wgt->x && mouse.x<win->x+wgt->x+16)
+		)
+	{
+		wgt->clicked=TRUE;
+		wgt->orig_wgt_yh = wgt->y_scroll;
+		wgt->orig_ms_x = mouse.x;
+		wgt->orig_ms_y = mouse.y;
+	}
+
+	if (mouse.lb && !wmgr->prev_lb && wgt->hover && !wgt->clicked &&
+	(mouse.y>win->y+wgt->y+16 && mouse.y<win->y+wgt->y+16+bar_pos && mouse.x>win->x+wgt->x && mouse.x<win->x+wgt->x+16)
+	)
+	{
+		wgt->y_scroll = mouse.y - (win->y+wgt->y+16);
+		bar_pos=wgt->y_scroll;
+		wgt->clicked=TRUE;
+	}
+
+	if (mouse.lb && !wmgr->prev_lb && wgt->hover && !wgt->clicked &&
+	(mouse.y>win->y+wgt->y+16+bar_pos+bar_height && mouse.x>win->x+wgt->x && mouse.x<win->x+wgt->x+16)
+	)
+	{
+		wgt->y_scroll = mouse.y + (win->y+wgt->y+16+bar_height);
+		bar_pos=wgt->y_scroll;
+		wgt->clicked=TRUE;
+	}
+	
+	if (!mouse.lb)
+	{
+		wgt->clicked=FALSE;
+	}
+
+	if (wgt->y_scroll<0)
+	{
+		wgt->y_scroll=0;
+	}
+
+	if (wgt->y_scroll>wgt->height-bar_height-33)
+	{
+		wgt->y_scroll=wgt->height-bar_height-33;
+	}
+	bar_pos=wgt->y_scroll;
+
+	wgt->parent_wgt->y_scroll=wgt->y_scroll;
+	wgt->parent_wgt->redraw=TRUE;
+
+	// Draw gutter
+	BlotRect2D(ctx, wgt->x, wgt->y, 17, wgt->height, theme.medium_dark);
+
+	// Draw up scroll button
+	BlotRect2D(ctx, wgt->x, wgt->y+1, 16, 15, 0xE8E8E800);
+	Blot2D(ctx, wgt->x-1, wgt->y, up_arrow_icon);
+	VLine2D(ctx, wgt->x, wgt->y+1, wgt->y+14, theme.light);
+	HLine2D(ctx, wgt->x, wgt->y+1, wgt->x+16, theme.light);
+	VLine2D(ctx, wgt->x+16, wgt->y+1, wgt->y+15, theme.dark);
+	HLine2D(ctx, wgt->x, wgt->y+15, wgt->x+16, theme.dark);
+
+	// Draw scrollbar
+	BlotRect2D(ctx, wgt->x, bar_pos+wgt->y+16, 16, bar_height, 0xE8E8E800);				
+	VLine2D(ctx, wgt->x, bar_pos+wgt->y+17, bar_pos+wgt->y+17+bar_height-3, theme.light);
+	HLine2D(ctx, wgt->x, bar_pos+wgt->y+17+bar_height-2, wgt->x+15, theme.dark);
+	VLine2D(ctx, wgt->x+16, bar_pos+wgt->y+17, bar_pos+wgt->y+17+bar_height-2, theme.dark);
+	HLine2D(ctx, wgt->x, bar_pos+wgt->y+16, wgt->x+15, theme.light);
+
+	// Draw down scroll button
+	BlotRect2D(ctx, wgt->x, wgt->y+wgt->height-17, 16, 15, 0xE8E8E800);
+	Blot2D(ctx, wgt->x, wgt->y+wgt->height-17, down_arrow_icon);
+	VLine2D(ctx, wgt->x, wgt->y+wgt->height-17, wgt->y+wgt->height-17+14, theme.light);
+	HLine2D(ctx, wgt->x, wgt->y+wgt->height-17, wgt->x+16, theme.light);
+	VLine2D(ctx, wgt->x+16, wgt->y+wgt->height-17, wgt->y+wgt->height-17+15, theme.dark);
+	HLine2D(ctx, wgt->x, wgt->y+wgt->height-17+15, wgt->x+16, theme.dark);
 
 }
 

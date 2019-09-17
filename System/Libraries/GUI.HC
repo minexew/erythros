@@ -389,6 +389,8 @@ EContext2D *terminal_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/ter
 EContext2D *cmenu_arrow_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/bullet_arrow_right.png");
 EContext2D *left_arrow_icon = LoadPNG("::/System/Media/Themes/Default/Icons/16/bullet_arrow_left.png");
 EContext2D *right_arrow_icon = cmenu_arrow_icon;
+EContext2D *up_arrow_icon = Rotate2D(left_arrow_icon, 90);
+EContext2D *down_arrow_icon = Rotate2D(right_arrow_icon, 90);
 
 EContext2D *window_btn = NewContext2D(16, 16, display.bpp);
 window_btn->alpha_color = 0x00FF0000;
